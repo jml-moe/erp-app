@@ -189,10 +189,19 @@ class ManufacturingService:
         if mo.quantity_produced + quantity_produced > mo.quantity:
             raise ValueError("Cannot produce more than ordered quantity")
         
-        # Get production location
+        # Get production location (create if doesn't exist)
         production_location = Location.objects.filter(
             location_type='production'
         ).first()
+        
+        if not production_location:
+            # Create production location if not exists
+            production_location = Location.objects.create(
+                name='Production',
+                code='PRODUCTION',
+                location_type='production',
+                actor=user
+            )
         
         # Create stock move for finished product
         move = StockMove.objects.create(

@@ -164,8 +164,12 @@ class MODetailView(LoginRequiredMixinView, BaseContextMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['lines'] = self.object.lines.select_related('product', 'product__uom', 'uom')
+        
+        # Calculate remaining quantity
+        remaining_quantity = self.object.quantity - self.object.quantity_produced
+        context['remaining_quantity'] = remaining_quantity
         context['produce_form'] = ProduceForm(initial={
-            'quantity': self.object.quantity - self.object.quantity_produced
+            'quantity': remaining_quantity
         })
         
         # Check component availability

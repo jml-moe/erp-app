@@ -101,12 +101,14 @@ class StockService:
             }
         )
         
+        # Save old quantity before updating (needed for weighted average calculation)
+        old_quantity = quant.quantity
         quant.quantity += quantity
         
         if unit_cost and quantity > 0:
-            # Update average cost
+            # Update average cost using weighted average
             if quant.quantity > 0:
-                old_value = (quant.quantity - quantity) * quant.unit_cost
+                old_value = old_quantity * quant.unit_cost
                 new_value = quantity * unit_cost
                 quant.unit_cost = (old_value + new_value) / quant.quantity
         

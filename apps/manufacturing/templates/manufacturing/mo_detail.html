@@ -100,7 +100,7 @@
             <div class="flex-1">
                 <label class="block text-sm font-medium text-neutral-700 mb-1">Quantity to Produce</label>
                 {{ produce_form.quantity }}
-                <p class="text-xs text-neutral-500 mt-1">Remaining: {{ mo.quantity|add:"-"|add:mo.quantity_produced }} {{ mo.product.uom.symbol }}</p>
+                <p class="text-xs text-neutral-500 mt-1">Remaining: {{ remaining_quantity|floatformat:2 }} {{ mo.product.uom.symbol }}</p>
             </div>
             <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 font-medium h-fit">
                 Produce
