@@ -1,0 +1,38 @@
+{% extends 'dashboard_base.html' %}
+{% load humanize %}
+
+{% block page_name %}
+    My Payrolls
+{% endblock %}
+
+{% block dashboard_content %}
+    <main class="max-w-3xl m-auto space-y-4">
+        {% if payrolls %}
+            {% for p in payrolls %}
+                <div class="bg-white p-6 rounded-lg border border-neutral-200 flex justify-between items-center">
+                    <div class="space-y-2">
+                        <h3 class="text-lg font-semibold">Payroll - {{ p.month|date:"F Y" }}</h3>
+                        <p class="text-sm text-neutral-600">Amount: <span class="font-semibold text-green-600">Rp {{ p.amount|floatformat:0|intcomma }}</span></p>
+                    </div>
+                    <div>
+                        {% if p.status == 'paid' %}
+                            <div class="bg-emerald-100 text-emerald-700 px-3 py-2 w-fit rounded-lg font-bold text-xs">PAID</div>
+                        {% elif p.status == 'processing' %}
+                            <div class="bg-yellow-100 text-yellow-700 px-3 py-2 w-fit rounded-lg font-bold text-xs">PROCESSING</div>
+                        {% else %}
+                            <div class="bg-rose-100 text-rose-700 px-3 py-2 w-fit rounded-lg font-bold text-xs">PENDING</div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="bg-white p-12 rounded-lg border border-neutral-200 text-center">
+                <svg class="h-12 w-12 mb-4 text-neutral-300 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p class="text-base font-medium text-neutral-900">No payroll records found</p>
+                <p class="text-sm text-neutral-500 mt-2">Your payroll records will appear here once processed.</p>
+            </div>
+        {% endif %}
+    </main>
+{% endblock %}

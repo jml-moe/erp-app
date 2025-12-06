@@ -11,7 +11,7 @@ class AnnouncementListView(LoginRequiredMixinView, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user_settings = EmployeeSetting.objects.get(actor=self.request.user)
+        user_settings, created = EmployeeSetting.objects.get_or_create(actor=self.request.user)
 
         context["user_settings"] = user_settings
         return context

@@ -1,0 +1,38 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+Delete Contact
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-xl">
+    <div class="bg-white rounded-lg border border-red-200 p-6">
+        <div class="flex items-center gap-4 mb-6">
+            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 24 24" class="text-red-600">
+                    <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/>
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-neutral-800">Delete Contact</h3>
+                <p class="text-neutral-500">This action cannot be undone.</p>
+            </div>
+        </div>
+        
+        <p class="mb-6">Are you sure you want to delete the contact <strong>{{ object.name }}</strong> from {{ object.vendor.name }}?</p>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="flex gap-4">
+                <button type="submit" class="bg-red-600 text-white py-2 px-6 rounded-lg hover:bg-red-700 font-medium">
+                    Yes, Delete
+                </button>
+                <a href="{% url 'vendor-detail' object.vendor.pk %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

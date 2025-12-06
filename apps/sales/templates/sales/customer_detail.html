@@ -1,0 +1,179 @@
+{% extends 'dashboard_base.html' %}
+{% load humanize %}
+
+{% block page_name %}
+{{ customer.name }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-5xl">
+    <!-- Header -->
+    <div class="mb-6 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <h2 class="text-xl font-semibold">{{ customer.name }}</h2>
+            <span class="px-2 py-1 text-xs rounded-full 
+                {% if customer.customer_type == 'individual' %}bg-blue-100 text-blue-800
+                {% else %}bg-purple-100 text-purple-800{% endif %}">
+                {{ customer.get_customer_type_display }}
+            </span>
+            {% if customer.is_active %}
+            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
+            {% else %}
+            <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Inactive</span>
+            {% endif %}
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'customer-update' customer.pk %}" class="bg-amber-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-amber-600">Edit</a>
+            <a href="{% url 'quotation-create' %}?customer={{ customer.pk }}" class="bg-blue-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-blue-700">New Quotation</a>
+            <a href="{% url 'so-create' %}?customer={{ customer.pk }}" class="bg-green-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-green-700">New Order</a>
+        </div>
+    </div>
+    
+    <!-- Info Cards -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">Phone</p>
+            <p class="font-medium">{{ customer.phone|default:"Not provided" }}</p>
+        </div>
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">Email</p>
+            <p class="font-medium">{{ customer.email|default:"Not provided" }}</p>
+        </div>
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">Total Orders</p>
+            <p class="text-xl font-semibold text-blue-600">{{ customer.total_orders }}</p>
+        </div>
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">Total Spent</p>
+            <p class="text-xl font-semibold text-green-600">Rp {{ customer.total_spent|floatformat:0|intcomma }}</p>
+        </div>
+    </div>
+    
+    <!-- Contact Info -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-neutral-800">Contact Information</h3>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm text-neutral-500 mb-1">Mobile</p>
+                <p>{{ customer.mobile|default:"Not provided" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500 mb-1">City</p>
+                <p>{{ customer.city|default:"Not provided" }}</p>
+            </div>
+            <div class="col-span-2">
+                <p class="text-sm text-neutral-500 mb-1">Address</p>
+                <p>{{ customer.address|default:"Not provided"|linebreaks }}</p>
+            </div>
+            {% if customer.customer_type == 'company' %}
+            <div>
+                <p class="text-sm text-neutral-500 mb-1">Company Name</p>
+                <p>{{ customer.company_name|default:"Not provided" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500 mb-1">Tax ID (NPWP)</p>
+                <p>{{ customer.tax_id|default:"Not provided" }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Recent Orders -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-neutral-800">Recent Orders</h3>
+        <table class="w-full">
+            <thead>
+                <tr class="border-b">
+                    <th class="p-2 text-left">Reference</th>
+                    <th class="text-left">Date</th>
+                    <th class="text-right">Total</th>
+                    <th class="text-left">State</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr class="border-b last:border-0">
+                    <td class="p-2">
+                        <a href="{% url 'so-detail' order.pk %}" class="text-blue-600 hover:underline font-mono text-sm">{{ order.reference }}</a>
+                    </td>
+                    <td>{{ order.date }}</td>
+                    <td class="text-right font-mono">Rp {{ order.total_amount|floatformat:0|intcomma }}</td>
+                    <td>
+                        <span class="px-2 py-1 text-xs rounded-full 
+                            {% if order.state == 'draft' %}bg-neutral-100 text-neutral-700
+                            {% elif order.state == 'confirmed' %}bg-blue-100 text-blue-800
+                            {% elif order.state == 'processing' %}bg-amber-100 text-amber-800
+                            {% elif order.state == 'ready' %}bg-indigo-100 text-indigo-800
+                            {% elif order.state == 'delivered' %}bg-green-100 text-green-800
+                            {% elif order.state == 'done' %}bg-green-100 text-green-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ order.get_state_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="p-4 text-center text-neutral-500">No orders yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Recent Invoices -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-neutral-800">Recent Invoices</h3>
+        <table class="w-full">
+            <thead>
+                <tr class="border-b">
+                    <th class="p-2 text-left">Reference</th>
+                    <th class="text-left">Date</th>
+                    <th class="text-right">Total</th>
+                    <th class="text-right">Paid</th>
+                    <th class="text-left">State</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                <tr class="border-b last:border-0">
+                    <td class="p-2">
+                        <a href="{% url 'invoice-detail' invoice.pk %}" class="text-blue-600 hover:underline font-mono text-sm">{{ invoice.reference }}</a>
+                    </td>
+                    <td>{{ invoice.date }}</td>
+                    <td class="text-right font-mono">Rp {{ invoice.total_amount|floatformat:0|intcomma }}</td>
+                    <td class="text-right font-mono text-green-600">Rp {{ invoice.amount_paid|floatformat:0|intcomma }}</td>
+                    <td>
+                        <span class="px-2 py-1 text-xs rounded-full 
+                            {% if invoice.state == 'draft' %}bg-neutral-100 text-neutral-700
+                            {% elif invoice.state == 'sent' %}bg-blue-100 text-blue-800
+                            {% elif invoice.state == 'paid' %}bg-green-100 text-green-800
+                            {% elif invoice.state == 'partial' %}bg-amber-100 text-amber-800
+                            {% elif invoice.state == 'overdue' %}bg-red-100 text-red-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ invoice.get_state_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="p-4 text-center text-neutral-500">No invoices yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if customer.notes %}
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-2 text-neutral-800">Notes</h3>
+        <p class="text-sm">{{ customer.notes|linebreaks }}</p>
+    </div>
+    {% endif %}
+    
+    <!-- Back -->
+    <a href="{% url 'customer-list' %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium inline-block">
+        &larr; Back to Customers
+    </a>
+</div>
+{% endblock %}
+

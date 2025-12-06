@@ -1,0 +1,138 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+Product: {{ product.name }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-4xl">
+    <!-- Header Actions -->
+    <div class="mb-6 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <span class="px-3 py-1 text-sm rounded-full 
+                {% if product.product_type == 'stockable' %}bg-green-100 text-green-800
+                {% elif product.product_type == 'consumable' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-purple-100 text-purple-800{% endif %}">
+                {{ product.get_product_type_display }}
+            </span>
+            {% if product.is_active %}
+            <span class="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">Active</span>
+            {% else %}
+            <span class="px-3 py-1 text-sm rounded-full bg-red-100 text-red-800">Inactive</span>
+            {% endif %}
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'product-update' product.pk %}" class="bg-amber-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-amber-600">Edit</a>
+            <a href="{% url 'product-delete' product.pk %}" class="bg-red-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-red-600">Delete</a>
+        </div>
+    </div>
+    
+    <!-- Basic Information -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-neutral-800">Basic Information</h3>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm text-neutral-500">Internal Reference</p>
+                <p class="font-mono">{{ product.internal_reference }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Barcode</p>
+                <p>{{ product.barcode|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Category</p>
+                <p>{{ product.category.name|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Product Type</p>
+                <p>{{ product.get_product_type_display }}</p>
+            </div>
+            <div class="col-span-2">
+                <p class="text-sm text-neutral-500">Description</p>
+                <p>{{ product.description|default:"-"|linebreaks }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Units and Pricing -->
+    <div class="grid grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-lg border border-neutral-200 p-6">
+            <h3 class="text-lg font-semibold mb-4 text-neutral-800">Units of Measure</h3>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm text-neutral-500">Default UoM</p>
+                    <p>{{ product.uom.name }} ({{ product.uom.symbol }})</p>
+                </div>
+                <div>
+                    <p class="text-sm text-neutral-500">Purchase UoM</p>
+                    <p>{% if product.purchase_uom %}{{ product.purchase_uom.name }} ({{ product.purchase_uom.symbol }}){% else %}Same as default{% endif %}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg border border-neutral-200 p-6">
+            <h3 class="text-lg font-semibold mb-4 text-neutral-800">Pricing</h3>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm text-neutral-500">Cost Method</p>
+                    <p>{{ product.get_cost_method_display }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-neutral-500">Cost Price</p>
+                    <p class="text-xl font-semibold">Rp {{ product.standard_price|floatformat:0 }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-neutral-500">Sales Price</p>
+                    <p class="text-xl font-semibold text-green-600">Rp {{ product.list_price|floatformat:0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Inventory Settings -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-neutral-800">Inventory Settings</h3>
+        <div class="grid grid-cols-4 gap-4">
+            <div>
+                <p class="text-sm text-neutral-500">Reorder Point</p>
+                <p>{{ product.reorder_point }} {{ product.uom.symbol }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Reorder Quantity</p>
+                <p>{{ product.reorder_qty }} {{ product.uom.symbol }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Can be Purchased</p>
+                <p>{% if product.can_be_purchased %}<span class="text-green-600">Yes</span>{% else %}<span class="text-red-600">No</span>{% endif %}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Can be Sold</p>
+                <p>{% if product.can_be_sold %}<span class="text-green-600">Yes</span>{% else %}<span class="text-red-600">No</span>{% endif %}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Timestamps -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6">
+        <h3 class="text-lg font-semibold mb-4 text-neutral-800">History</h3>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm text-neutral-500">Created At</p>
+                <p>{{ product.created_at }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Last Updated</p>
+                <p>{{ product.updated_at }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Back Button -->
+    <div class="mt-6">
+        <a href="{% url 'product-list' %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium inline-block">
+            &larr; Back to Products
+        </a>
+    </div>
+</div>
+{% endblock %}
+

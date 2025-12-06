@@ -1,0 +1,144 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+{{ picking.reference }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-5xl">
+    <!-- Header -->
+    <div class="mb-6 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <span class="px-3 py-1 text-sm rounded-full 
+                {% if picking.picking_type == 'incoming' %}bg-green-100 text-green-800
+                {% elif picking.picking_type == 'outgoing' %}bg-red-100 text-red-800
+                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                {{ picking.get_picking_type_display }}
+            </span>
+            <span class="px-3 py-1 text-sm rounded-full 
+                {% if picking.state == 'done' %}bg-green-100 text-green-800
+                {% elif picking.state == 'ready' %}bg-blue-100 text-blue-800
+                {% elif picking.state == 'cancelled' %}bg-red-100 text-red-800
+                {% else %}bg-neutral-100 text-neutral-700{% endif %}">
+                {{ picking.get_state_display }}
+            </span>
+        </div>
+        <div class="flex gap-2">
+            {% if picking.state == 'draft' %}
+            <a href="{% url 'picking-update' picking.pk %}" class="bg-amber-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-amber-600">Edit</a>
+            <form method="post" action="?action=ready" class="inline">
+                {% csrf_token %}
+                <button type="submit" formaction="{% url 'picking-detail' picking.pk %}?action=ready" class="bg-blue-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-blue-700">
+                    Mark Ready
+                </button>
+            </form>
+            {% endif %}
+            {% if picking.state == 'ready' %}
+            <form method="post" action="{% url 'picking-validate' picking.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-green-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-green-700">
+                    Validate
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Info -->
+    <div class="grid grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-lg border border-neutral-200 p-6">
+            <h3 class="text-lg font-semibold mb-4 text-neutral-800">Details</h3>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-neutral-500">Source Location</span>
+                    <span>{{ picking.location_src|default:"-" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-neutral-500">Destination Location</span>
+                    <span>{{ picking.location_dest|default:"-" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-neutral-500">Scheduled Date</span>
+                    <span>{{ picking.scheduled_date|date:"d M Y H:i"|default:"-" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-neutral-500">Origin</span>
+                    <span>{{ picking.origin|default:"-" }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg border border-neutral-200 p-6">
+            <h3 class="text-lg font-semibold mb-4 text-neutral-800">Status</h3>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-neutral-500">Created</span>
+                    <span>{{ picking.created_at|date:"d M Y H:i" }}</span>
+                </div>
+                {% if picking.date_done %}
+                <div class="flex justify-between">
+                    <span class="text-neutral-500">Completed</span>
+                    <span>{{ picking.date_done|date:"d M Y H:i" }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if picking.notes %}
+            <div class="mt-4 pt-4 border-t">
+                <p class="text-sm text-neutral-500 mb-1">Notes</p>
+                <p class="text-sm">{{ picking.notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Lines -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-neutral-800">Lines</h3>
+            {% if picking.state == 'draft' %}
+            <a href="{% url 'picking-line-create' picking.pk %}" class="bg-blue-600 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"/></svg>
+                Add Line
+            </a>
+            {% endif %}
+        </div>
+        
+        <table class="w-full">
+            <thead>
+                <tr class="border-b">
+                    <th class="p-2 text-left">Product</th>
+                    <th class="text-left w-24">UoM</th>
+                    <th class="text-right w-28">Demand</th>
+                    <th class="text-right w-28">Done</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for line in lines %}
+                <tr class="border-b last:border-0">
+                    <td class="p-2">
+                        <a href="{% url 'product-detail' line.product.pk %}" class="text-blue-600 hover:underline">{{ line.product.name }}</a>
+                        <p class="text-xs text-neutral-500">{{ line.product.internal_reference }}</p>
+                    </td>
+                    <td>{{ line.product.uom.symbol }}</td>
+                    <td class="text-right font-mono">{{ line.quantity|floatformat:2 }}</td>
+                    <td class="text-right font-mono {% if line.quantity_done >= line.quantity %}text-green-600{% endif %}">
+                        {{ line.quantity_done|floatformat:2 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="p-4 text-center text-neutral-500">No lines added yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Back -->
+    <a href="{% url 'picking-list' %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium inline-block">
+        &larr; Back to Pickings
+    </a>
+</div>
+{% endblock %}
+

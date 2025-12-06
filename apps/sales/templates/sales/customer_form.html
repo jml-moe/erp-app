@@ -1,0 +1,82 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+{% if object %}Edit Customer{% else %}New Customer{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-2xl">
+    <form method="post" class="bg-white rounded-lg border border-neutral-200 p-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="col-span-2">
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Customer Name *</label>
+                {{ form.name }}
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Type</label>
+                {{ form.customer_type }}
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Phone</label>
+                {{ form.phone }}
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Mobile</label>
+                {{ form.mobile }}
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Email</label>
+                {{ form.email }}
+            </div>
+            
+            <div class="col-span-2">
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Address</label>
+                {{ form.address }}
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 mb-1">City</label>
+                {{ form.city }}
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Company Name (for company type)</label>
+                {{ form.company_name }}
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Tax ID (NPWP)</label>
+                {{ form.tax_id }}
+            </div>
+            
+            <div class="col-span-2">
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Notes</label>
+                {{ form.notes }}
+            </div>
+            
+            <div class="col-span-2">
+                <label class="flex items-center gap-2">
+                    {{ form.is_active }}
+                    <span class="text-sm text-neutral-700">Active</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="flex justify-end gap-2">
+            <a href="{% url 'customer-list' %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium">
+                Cancel
+            </a>
+            <button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 font-medium">
+                {% if object %}Update{% else %}Create{% endif %} Customer
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

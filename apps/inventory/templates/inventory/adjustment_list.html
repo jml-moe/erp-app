@@ -1,0 +1,54 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+Stock Adjustments
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="mb-6 flex justify-between items-center">
+    <h2 class="text-xl font-semibold text-neutral-800">Stock Adjustments</h2>
+    <a href="{% url 'adjustment-create' %}" class="bg-blue-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentColor" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"/></svg>
+        New Adjustment
+    </a>
+</div>
+
+<table class="w-full border border-blue-200">
+    <thead>
+        <tr class="bg-white">
+            <th class="p-4 text-left w-28">Reference</th>
+            <th class="text-left">Name</th>
+            <th class="text-left w-40">Location</th>
+            <th class="text-left w-24">State</th>
+            <th class="text-left w-32">Date</th>
+            <th class="text-left w-28">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for adj in adjustments %}
+        <tr class="bg-blue-50/30 odd:bg-blue-50">
+            <td class="p-4 font-mono text-sm">{{ adj.reference }}</td>
+            <td>{{ adj.name }}</td>
+            <td class="text-sm">{{ adj.location }}</td>
+            <td>
+                <span class="px-2 py-1 text-xs rounded-full 
+                    {% if adj.state == 'done' %}bg-green-100 text-green-800
+                    {% elif adj.state == 'in_progress' %}bg-blue-100 text-blue-800
+                    {% else %}bg-neutral-100 text-neutral-700{% endif %}">
+                    {{ adj.get_state_display }}
+                </span>
+            </td>
+            <td class="text-sm">{{ adj.date }}</td>
+            <td class="p-4">
+                <a href="{% url 'adjustment-detail' adj.pk %}" class="bg-blue-600 text-white py-1.5 px-3 text-xs rounded-lg hover:bg-blue-700">View</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" class="p-4 text-center text-neutral-500">No adjustments found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+

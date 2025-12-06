@@ -1,0 +1,70 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+{% if form.instance.pk %}Edit Location{% else %}Create Location{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-xl">
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <div class="bg-white rounded-lg border border-neutral-200 p-6">
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Location Name *</label>
+                        {{ form.name }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Code *</label>
+                        {{ form.code }}
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Warehouse</label>
+                        {{ form.warehouse }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Parent Location</label>
+                        {{ form.parent }}
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Location Type *</label>
+                    {{ form.location_type }}
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-2">
+                        {{ form.is_default }}
+                        <label class="text-sm font-medium text-neutral-700">Default Stock Location</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        {{ form.is_scrap }}
+                        <label class="text-sm font-medium text-neutral-700">Scrap Location</label>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    {{ form.is_active }}
+                    <label class="text-sm font-medium text-neutral-700">Active</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex gap-4">
+            <button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 font-medium">
+                {% if form.instance.pk %}Update Location{% else %}Create Location{% endif %}
+            </button>
+            <a href="{% url 'location-list' %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

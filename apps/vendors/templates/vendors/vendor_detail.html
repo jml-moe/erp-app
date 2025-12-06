@@ -1,0 +1,204 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+Vendor: {{ vendor.name }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-5xl">
+    <!-- Header Actions -->
+    <div class="mb-6 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <span class="font-mono text-lg text-neutral-500">{{ vendor.code }}</span>
+            <div class="flex items-center gap-1">
+                {% for i in "12345" %}
+                    {% if forloop.counter <= vendor.rating %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24" class="text-yellow-400">
+                        <path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2L9.19 8.63L2 9.24l5.46 4.73L5.82 21z"/>
+                    </svg>
+                    {% else %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24" class="text-neutral-300">
+                        <path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2L9.19 8.63L2 9.24l5.46 4.73L5.82 21z"/>
+                    </svg>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% if vendor.is_active %}
+            <span class="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">Active</span>
+            {% else %}
+            <span class="px-3 py-1 text-sm rounded-full bg-red-100 text-red-800">Inactive</span>
+            {% endif %}
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'vendor-update' vendor.pk %}" class="bg-amber-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-amber-600">Edit</a>
+            <a href="{% url 'vendor-delete' vendor.pk %}" class="bg-red-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-red-600">Delete</a>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-3 gap-6 mb-6">
+        <!-- Basic & Contact Info -->
+        <div class="col-span-2 space-y-6">
+            <div class="bg-white rounded-lg border border-neutral-200 p-6">
+                <h3 class="text-lg font-semibold mb-4 text-neutral-800">Contact Information</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-neutral-500">Company Name</p>
+                        <p>{{ vendor.company_name|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-500">Email</p>
+                        <p>{% if vendor.email %}<a href="mailto:{{ vendor.email }}" class="text-blue-600 hover:underline">{{ vendor.email }}</a>{% else %}-{% endif %}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-500">Phone</p>
+                        <p>{{ vendor.phone|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-500">Website</p>
+                        <p>{% if vendor.website %}<a href="{{ vendor.website }}" target="_blank" class="text-blue-600 hover:underline">{{ vendor.website }}</a>{% else %}-{% endif %}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg border border-neutral-200 p-6">
+                <h3 class="text-lg font-semibold mb-4 text-neutral-800">Address</h3>
+                <p class="whitespace-pre-line">{{ vendor.full_address|default:"-" }}</p>
+            </div>
+        </div>
+        
+        <!-- Business Info -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-lg border border-neutral-200 p-6">
+                <h3 class="text-lg font-semibold mb-4 text-neutral-800">Business Info</h3>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-sm text-neutral-500">NPWP</p>
+                        <p>{{ vendor.tax_id|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-500">Payment Terms</p>
+                        <p class="font-medium">{{ vendor.get_payment_term_display }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-500">Total Products</p>
+                        <p class="text-xl font-semibold text-blue-600">{{ vendor.total_products }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            {% if vendor.notes %}
+            <div class="bg-white rounded-lg border border-neutral-200 p-6">
+                <h3 class="text-lg font-semibold mb-4 text-neutral-800">Notes</h3>
+                <p class="text-sm">{{ vendor.notes|linebreaks }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Contacts -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-neutral-800">Contacts</h3>
+            <a href="{% url 'vendor-contact-create' vendor.pk %}" class="bg-blue-600 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"/></svg>
+                Add Contact
+            </a>
+        </div>
+        
+        {% if contacts %}
+        <table class="w-full">
+            <thead>
+                <tr class="border-b">
+                    <th class="p-2 text-left">Name</th>
+                    <th class="text-left">Title</th>
+                    <th class="text-left">Email</th>
+                    <th class="text-left">Phone</th>
+                    <th class="text-left w-24">Primary</th>
+                    <th class="text-left w-32">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contact in contacts %}
+                <tr class="border-b last:border-0">
+                    <td class="p-2 font-medium">{{ contact.name }}</td>
+                    <td>{{ contact.title|default:"-" }}</td>
+                    <td>{{ contact.email|default:"-" }}</td>
+                    <td>{{ contact.phone|default:contact.mobile|default:"-" }}</td>
+                    <td>
+                        {% if contact.is_primary %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Primary</span>
+                        {% endif %}
+                    </td>
+                    <td class="flex gap-2 p-2">
+                        <a href="{% url 'vendor-contact-update' contact.pk %}" class="text-amber-600 hover:underline text-sm">Edit</a>
+                        <a href="{% url 'vendor-contact-delete' contact.pk %}" class="text-red-600 hover:underline text-sm">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-neutral-500 text-center py-4">No contacts added yet.</p>
+        {% endif %}
+    </div>
+    
+    <!-- Products -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-neutral-800">Products</h3>
+            <a href="{% url 'vendor-product-create' vendor.pk %}" class="bg-blue-600 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"/></svg>
+                Add Product
+            </a>
+        </div>
+        
+        {% if vendor_products %}
+        <table class="w-full">
+            <thead>
+                <tr class="border-b">
+                    <th class="p-2 text-left">Product</th>
+                    <th class="text-left">Vendor Code</th>
+                    <th class="text-left">Price</th>
+                    <th class="text-left">Min Qty</th>
+                    <th class="text-left">Lead Time</th>
+                    <th class="text-left w-24">Preferred</th>
+                    <th class="text-left w-32">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vp in vendor_products %}
+                <tr class="border-b last:border-0">
+                    <td class="p-2">
+                        <a href="{% url 'product-detail' vp.product.pk %}" class="text-blue-600 hover:underline font-medium">{{ vp.product.name }}</a>
+                    </td>
+                    <td class="font-mono text-sm">{{ vp.vendor_product_code|default:"-" }}</td>
+                    <td>{{ vp.currency }} {{ vp.price|floatformat:0 }}</td>
+                    <td>{{ vp.min_qty }} {{ vp.product.uom.symbol }}</td>
+                    <td>{{ vp.lead_time_days }} days</td>
+                    <td>
+                        {% if vp.is_preferred %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Preferred</span>
+                        {% endif %}
+                    </td>
+                    <td class="flex gap-2 p-2">
+                        <a href="{% url 'vendor-product-update' vp.pk %}" class="text-amber-600 hover:underline text-sm">Edit</a>
+                        <a href="{% url 'vendor-product-delete' vp.pk %}" class="text-red-600 hover:underline text-sm">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-neutral-500 text-center py-4">No products added yet.</p>
+        {% endif %}
+    </div>
+    
+    <!-- Back Button -->
+    <div>
+        <a href="{% url 'vendor-list' %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium inline-block">
+            &larr; Back to Vendors
+        </a>
+    </div>
+</div>
+{% endblock %}
+

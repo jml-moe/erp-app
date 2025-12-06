@@ -8,7 +8,7 @@ from core.views import LoginRequiredMixinView
 
 class PayrollListView(LoginRequiredMixinView, ListView):
     model = Payroll
-    template_name = "payroll_list.html"
+    template_name = "payrolls/payroll_list.html"
     context_object_name = "payrolls"
 
     def get_queryset(self):
@@ -18,7 +18,7 @@ class PayrollListView(LoginRequiredMixinView, ListView):
         context = super().get_context_data(**kwargs)
 
         employee = Employee.objects.filter(actor=self.request.user).first()
-        user_settings = EmployeeSetting.objects.get(actor=self.request.user)
+        user_settings, created = EmployeeSetting.objects.get_or_create(actor=self.request.user)
 
         context['employee'] = employee
         context['user_settings'] = user_settings
@@ -27,8 +27,8 @@ class PayrollListView(LoginRequiredMixinView, ListView):
 
 class PayrollProcessView(LoginRequiredMixinView, View):
     def get(self, request):
-        user_settings = EmployeeSetting.objects.get(actor=request.user)
-        return render(request, 'payroll_process.html', {'user_settings': user_settings})
+        user_settings, created = EmployeeSetting.objects.get_or_create(actor=request.user)
+        return render(request, 'payrolls/payroll_process.html', {'user_settings': user_settings})
 
     def post(self, request):
         action = request.POST.get('action')

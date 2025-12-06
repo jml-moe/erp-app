@@ -1,0 +1,214 @@
+{% extends 'dashboard_base.html' %}
+{% load humanize %}
+
+{% block page_name %}
+{{ mo.reference }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-5xl">
+    <!-- Header -->
+    <div class="mb-6 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <h2 class="text-xl font-semibold">{{ mo.product.name }}</h2>
+            <span class="px-3 py-1 text-sm rounded-full 
+                {% if mo.priority == '3' %}bg-red-100 text-red-800
+                {% elif mo.priority == '2' %}bg-amber-100 text-amber-800
+                {% elif mo.priority == '1' %}bg-blue-100 text-blue-800
+                {% else %}bg-neutral-100 text-neutral-600{% endif %}">
+                {{ mo.get_priority_display }}
+            </span>
+            <span class="px-3 py-1 text-sm rounded-full 
+                {% if mo.state == 'draft' %}bg-neutral-100 text-neutral-700
+                {% elif mo.state == 'confirmed' %}bg-blue-100 text-blue-800
+                {% elif mo.state == 'in_progress' %}bg-amber-100 text-amber-800
+                {% elif mo.state == 'done' %}bg-green-100 text-green-800
+                {% else %}bg-red-100 text-red-800{% endif %}">
+                {{ mo.get_state_display }}
+            </span>
+        </div>
+        <div class="flex gap-2">
+            {% if mo.state == 'draft' %}
+            <a href="{% url 'mo-update' mo.pk %}" class="bg-amber-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-amber-600">Edit</a>
+            <form method="post" action="{% url 'mo-confirm' mo.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-blue-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-blue-700">Confirm</button>
+            </form>
+            {% endif %}
+            
+            {% if mo.state == 'confirmed' %}
+            <form method="post" action="{% url 'mo-start' mo.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-amber-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-amber-600">Start Production</button>
+            </form>
+            {% endif %}
+            
+            {% if mo.state == 'in_progress' %}
+            <form method="post" action="{% url 'mo-complete' mo.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-green-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-green-700">Complete All</button>
+            </form>
+            {% endif %}
+            
+            {% if mo.state not in 'done,cancelled' and mo.quantity_produced == 0 %}
+            <form method="post" action="{% url 'mo-cancel' mo.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-red-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-red-600">Cancel</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Progress -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <div class="flex items-center justify-between mb-2">
+            <h3 class="text-lg font-semibold text-neutral-800">Production Progress</h3>
+            <span class="text-2xl font-semibold text-green-600">{{ mo.progress_percentage|floatformat:0 }}%</span>
+        </div>
+        <div class="w-full bg-neutral-200 rounded-full h-4 mb-2">
+            <div class="bg-green-500 h-4 rounded-full transition-all" style="width: {{ mo.progress_percentage|floatformat:0 }}%"></div>
+        </div>
+        <p class="text-sm text-neutral-500">{{ mo.quantity_produced }} / {{ mo.quantity }} {{ mo.product.uom.symbol }} produced</p>
+    </div>
+    
+    <!-- Info Cards -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">BOM</p>
+            <p class="font-medium">{% if mo.bom %}<a href="{% url 'bom-detail' mo.bom.pk %}" class="text-green-600 hover:underline">{{ mo.bom.reference }}</a>{% else %}-{% endif %}</p>
+        </div>
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">Source Location</p>
+            <p class="font-medium">{{ mo.source_location|default:"-" }}</p>
+        </div>
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">Destination</p>
+            <p class="font-medium">{{ mo.destination_location|default:"-" }}</p>
+        </div>
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">Expected Cost</p>
+            <p class="text-xl font-semibold text-green-600">Rp {{ mo.expected_cost|floatformat:0|intcomma }}</p>
+        </div>
+    </div>
+    
+    <!-- Produce Form (only in progress) -->
+    {% if mo.state == 'in_progress' and mo.quantity_produced < mo.quantity %}
+    <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-green-800">Record Production Output</h3>
+        <form method="post" action="{% url 'mo-produce' mo.pk %}" class="flex items-end gap-4">
+            {% csrf_token %}
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Quantity to Produce</label>
+                {{ produce_form.quantity }}
+                <p class="text-xs text-neutral-500 mt-1">Remaining: {{ mo.quantity|add:"-"|add:mo.quantity_produced }} {{ mo.product.uom.symbol }}</p>
+            </div>
+            <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 font-medium h-fit">
+                Produce
+            </button>
+        </form>
+    </div>
+    {% endif %}
+    
+    <!-- Components -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-neutral-800">Components to Consume</h3>
+            {% if mo.state == 'in_progress' %}
+            <form method="post" action="{% url 'mo-consume' mo.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-amber-500 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-amber-600">
+                    Consume All
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        
+        <table class="w-full">
+            <thead>
+                <tr class="border-b">
+                    <th class="p-2 text-left">Component</th>
+                    <th class="text-left w-20">UoM</th>
+                    <th class="text-right w-28">Required</th>
+                    <th class="text-right w-28">Consumed</th>
+                    <th class="text-right w-28">Available</th>
+                    <th class="text-left w-24">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for line in lines %}
+                <tr class="border-b last:border-0">
+                    <td class="p-2">
+                        <a href="{% url 'product-detail' line.product.pk %}" class="text-green-600 hover:underline font-medium">{{ line.product.name }}</a>
+                    </td>
+                    <td>{{ line.uom.symbol|default:line.product.uom.symbol }}</td>
+                    <td class="text-right font-mono">{{ line.quantity_required|floatformat:2 }}</td>
+                    <td class="text-right font-mono {% if line.is_fully_consumed %}text-green-600{% else %}text-amber-600{% endif %}">
+                        {{ line.quantity_consumed|floatformat:2 }}
+                    </td>
+                    <td class="text-right font-mono">
+                        {% if availability %}
+                            {% for prod, info in availability.items %}
+                                {% if prod.pk == line.product.pk %}
+                                    <span class="{% if info.sufficient %}text-green-600{% else %}text-red-600{% endif %}">
+                                        {{ info.available|floatformat:2 }}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if line.is_fully_consumed %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Consumed</span>
+                        {% else %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="p-4 text-center text-neutral-500">No components defined.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Dates -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-neutral-800">Timeline</h3>
+        <div class="grid grid-cols-4 gap-4">
+            <div>
+                <p class="text-sm text-neutral-500">Created</p>
+                <p>{{ mo.created_at|date:"d M Y H:i" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Scheduled</p>
+                <p>{{ mo.scheduled_date|date:"d M Y H:i"|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Started</p>
+                <p>{{ mo.date_started|date:"d M Y H:i"|default:"-" }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Finished</p>
+                <p>{{ mo.date_finished|date:"d M Y H:i"|default:"-" }}</p>
+            </div>
+        </div>
+    </div>
+    
+    {% if mo.notes %}
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-2 text-neutral-800">Notes</h3>
+        <p class="text-sm">{{ mo.notes|linebreaks }}</p>
+    </div>
+    {% endif %}
+    
+    <!-- Back -->
+    <a href="{% url 'mo-list' %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium inline-block">
+        &larr; Back to Manufacturing Orders
+    </a>
+</div>
+{% endblock %}
+

@@ -1,0 +1,115 @@
+{% extends 'dashboard_base.html' %}
+{% load humanize %}
+
+{% block page_name %}
+Vendors
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-6">
+    <!-- Action Bar -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <form method="get" class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div class="relative flex-grow sm:flex-grow-0">
+                <input type="text" name="search" value="{{ request.GET.search }}" 
+                       placeholder="Search vendors..." 
+                       class="w-full sm:w-64 pl-10 pr-4 py-2 bg-white border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-neutral-400">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+            </div>
+            <div class="relative">
+                <select name="rating" class="appearance-none pl-4 pr-10 py-2 bg-white border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow cursor-pointer">
+                    <option value="">All Ratings</option>
+                    <option value="5" {% if request.GET.rating == '5' %}selected{% endif %}>5 - Excellent</option>
+                    <option value="4" {% if request.GET.rating == '4' %}selected{% endif %}>4 - Good</option>
+                    <option value="3" {% if request.GET.rating == '3' %}selected{% endif %}>3 - Average</option>
+                    <option value="2" {% if request.GET.rating == '2' %}selected{% endif %}>2 - Below Average</option>
+                    <option value="1" {% if request.GET.rating == '1' %}selected{% endif %}>1 - Poor</option>
+                </select>
+            </div>
+            <button type="submit" class="bg-white border border-neutral-300 text-neutral-700 py-2 px-4 text-sm font-medium rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                Filter
+            </button>
+        </form>
+        <a href="{% url 'vendor-create' %}" class="inline-flex items-center gap-2 bg-blue-600 text-white py-2 px-4 text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+            Add Vendor
+        </a>
+    </div>
+
+    <!-- Table Card -->
+    <div class="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200">
+                <thead class="bg-neutral-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-32">Code</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Email</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Phone</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-32">Payment</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-32">Rating</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider w-32">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-neutral-200">
+                    {% for vendor in vendors %}
+                    <tr class="hover:bg-neutral-50 transition-colors group">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-500">
+                            {{ vendor.code }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="{% url 'vendor-detail' vendor.pk %}" class="text-blue-600 hover:text-blue-800 hover:underline">
+                                {{ vendor.name }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                            {{ vendor.email|default:"-" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                            {{ vendor.phone|default:"-" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700">
+                                {{ vendor.get_payment_term_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-0.5">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= vendor.rating %}
+                                    <svg class="h-4 w-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                    {% else %}
+                                    <svg class="h-4 w-4 text-neutral-200" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <a href="{% url 'vendor-detail' vendor.pk %}" class="text-neutral-400 hover:text-blue-600 transition-colors">View</a>
+                                <a href="{% url 'vendor-update' vendor.pk %}" class="text-neutral-400 hover:text-amber-600 transition-colors">Edit</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center justify-center text-neutral-500">
+                                <svg class="h-12 w-12 mb-4 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                </svg>
+                                <p class="text-base font-medium text-neutral-900">No vendors found</p>
+                                <p class="mt-1 text-sm">Get started by adding a new vendor.</p>
+                                <a href="{% url 'vendor-create' %}" class="mt-4 text-blue-600 hover:underline">Add Vendor</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

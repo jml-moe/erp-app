@@ -1,0 +1,208 @@
+{% extends 'dashboard_base.html' %}
+{% load humanize %}
+
+{% block page_name %}
+{{ rfq.reference }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+            <h2 class="text-xl font-bold text-neutral-900">{{ rfq.vendor.name }}</h2>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                {% if rfq.state == 'draft' %}bg-neutral-100 text-neutral-700
+                {% elif rfq.state == 'sent' %}bg-blue-100 text-blue-800
+                {% elif rfq.state == 'received' %}bg-amber-100 text-amber-800
+                {% elif rfq.state == 'done' %}bg-green-100 text-green-800
+                {% else %}bg-red-100 text-red-800{% endif %}">
+                {{ rfq.get_state_display }}
+            </span>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            {% if rfq.state == 'draft' %}
+            <a href="{% url 'rfq-update' rfq.pk %}" class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-lg text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">Edit</a>
+            <form method="post" action="{% url 'rfq-send' rfq.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">Send to Vendor</button>
+            </form>
+            {% endif %}
+            
+            {% if rfq.state == 'sent' %}
+            <form method="post" action="{% url 'rfq-receive-quotation' rfq.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">Mark Quotation Received</button>
+            </form>
+            {% endif %}
+            
+            {% if rfq.state in 'sent,received' and not rfq.purchase_order %}
+            <button type="button" onclick="document.getElementById('convertModal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                Convert to PO
+            </button>
+            {% endif %}
+            
+            {% if rfq.state != 'done' and rfq.state != 'cancelled' %}
+            <form method="post" action="{% url 'rfq-cancel' rfq.pk %}" class="inline" onsubmit="return confirm('Are you sure?');">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">Cancel</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Info Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Date</p>
+            <p class="text-lg font-semibold text-neutral-900">{{ rfq.date }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Deadline</p>
+            <p class="text-lg font-semibold text-neutral-900">{{ rfq.deadline|default:"Not set" }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Total Amount</p>
+            <p class="text-lg font-semibold text-blue-600 font-mono">Rp {{ rfq.total_amount|floatformat:0|intcomma }}</p>
+        </div>
+    </div>
+    
+    {% if rfq.purchase_order %}
+    <div class="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+        <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <p class="text-green-800">
+            This RFQ has been converted to Purchase Order: 
+            <a href="{% url 'po-detail' rfq.purchase_order.pk %}" class="font-bold hover:underline">{{ rfq.purchase_order.reference }}</a>
+        </p>
+    </div>
+    {% endif %}
+    
+    <!-- Lines Table -->
+    <div class="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-neutral-200 flex justify-between items-center bg-neutral-50/50">
+            <h3 class="text-base font-semibold text-neutral-900">Lines</h3>
+            {% if rfq.state == 'draft' %}
+            <a href="{% url 'rfq-line-create' rfq.pk %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                Add Line
+            </a>
+            {% endif %}
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200">
+                <thead class="bg-neutral-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/3">Product</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">UoM</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Qty</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Unit Price</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Subtotal</th>
+                        {% if rfq.state == 'draft' %}<th scope="col" class="px-6 py-3 w-20"></th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-neutral-200">
+                    {% for line in lines %}
+                    <tr class="hover:bg-neutral-50 transition-colors group">
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-medium text-neutral-900">{{ line.product.name }}</span>
+                                {% if line.description != line.product.name %}
+                                <span class="text-xs text-neutral-500 mt-0.5">{{ line.description }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                            {{ line.product.uom.symbol }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 text-right font-mono">
+                            {{ line.quantity|floatformat:2 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-right font-mono">
+                            Rp {{ line.unit_price|floatformat:0|intcomma }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 text-right font-mono">
+                            Rp {{ line.subtotal|floatformat:0|intcomma }}
+                        </td>
+                        {% if rfq.state == 'draft' %}
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <a href="{% url 'rfq-line-update' line.pk %}" class="text-blue-600 hover:text-blue-900">Edit</a>
+                                <form method="post" action="{% url 'rfq-line-delete' line.pk %}" class="inline" onsubmit="return confirm('Are you sure?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if rfq.state == 'draft' %}6{% else %}5{% endif %}" class="px-6 py-12 text-center text-neutral-500">
+                            No lines added yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="bg-neutral-50 border-t border-neutral-200">
+                    <tr>
+                        <td colspan="{% if rfq.state == 'draft' %}4{% else %}3{% endif %}" class="px-6 py-3 text-right text-sm font-medium text-neutral-500">Untaxed Amount</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-neutral-900 font-mono">Rp {{ rfq.untaxed_amount|floatformat:0|intcomma }}</td>
+                        {% if rfq.state == 'draft' %}<td></td>{% endif %}
+                    </tr>
+                    <tr>
+                        <td colspan="{% if rfq.state == 'draft' %}4{% else %}3{% endif %}" class="px-6 py-3 text-right text-sm font-medium text-neutral-500">Tax (11%)</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-neutral-900 font-mono">Rp {{ rfq.tax_amount|floatformat:0|intcomma }}</td>
+                        {% if rfq.state == 'draft' %}<td></td>{% endif %}
+                    </tr>
+                    <tr class="bg-neutral-100 font-semibold">
+                        <td colspan="{% if rfq.state == 'draft' %}4{% else %}3{% endif %}" class="px-6 py-4 text-right text-base text-neutral-900">Total</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-base text-blue-600 font-mono">Rp {{ rfq.total_amount|floatformat:0|intcomma }}</td>
+                        {% if rfq.state == 'draft' %}<td></td>{% endif %}
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    
+    {% if rfq.notes %}
+    <div class="bg-white rounded-xl border border-neutral-200 p-6 shadow-sm">
+        <h3 class="text-base font-semibold mb-2 text-neutral-900">Notes</h3>
+        <div class="prose prose-sm text-neutral-600 max-w-none">
+            {{ rfq.notes|linebreaks }}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Back Link -->
+    <div>
+        <a href="{% url 'rfq-list' %}" class="inline-flex items-center text-sm font-medium text-neutral-500 hover:text-neutral-700 transition-colors">
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Back to RFQs
+        </a>
+    </div>
+</div>
+
+<!-- Convert to PO Modal -->
+<div id="convertModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
+    <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 transform transition-all">
+        <h3 class="text-lg font-bold text-neutral-900 mb-4">Convert to Purchase Order</h3>
+        <form method="post" action="{% url 'rfq-convert-to-po' rfq.pk %}">
+            {% csrf_token %}
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Delivery Location *</label>
+                {{ convert_form.delivery_location }}
+                <p class="text-xs text-neutral-500 mt-1">Where should the vendor deliver the items?</p>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button type="button" onclick="document.getElementById('convertModal').classList.add('hidden')" class="px-4 py-2 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-100 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm">
+                    Convert
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

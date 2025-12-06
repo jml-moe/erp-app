@@ -1,0 +1,245 @@
+{% extends 'dashboard_base.html' %}
+{% load humanize %}
+
+{% block page_name %}
+{{ order.reference }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-5xl">
+    <!-- Header -->
+    <div class="mb-6 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <h2 class="text-xl font-semibold">{{ order.customer.name }}</h2>
+            <span class="px-3 py-1 text-sm rounded-full 
+                {% if order.state == 'draft' %}bg-neutral-100 text-neutral-700
+                {% elif order.state == 'confirmed' %}bg-blue-100 text-blue-800
+                {% elif order.state == 'processing' %}bg-amber-100 text-amber-800
+                {% elif order.state == 'ready' %}bg-indigo-100 text-indigo-800
+                {% elif order.state == 'delivered' %}bg-green-100 text-green-800
+                {% elif order.state == 'done' %}bg-green-100 text-green-800
+                {% else %}bg-red-100 text-red-800{% endif %}">
+                {{ order.get_state_display }}
+            </span>
+        </div>
+        <div class="flex gap-2">
+            {% if order.state == 'draft' %}
+            <a href="{% url 'so-update' order.pk %}" class="bg-amber-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-amber-600">Edit</a>
+            <form method="post" action="{% url 'so-confirm' order.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-blue-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-blue-700">Confirm</button>
+            </form>
+            {% endif %}
+            
+            {% if order.state == 'confirmed' %}
+            <form method="post" action="{% url 'so-process' order.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-amber-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-amber-600">Start Processing</button>
+            </form>
+            <form method="post" action="{% url 'so-deliver' order.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-green-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-green-700">Mark Delivered</button>
+            </form>
+            {% endif %}
+            
+            {% if order.state == 'processing' %}
+            <form method="post" action="{% url 'so-ready' order.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-indigo-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-indigo-700">Mark Ready</button>
+            </form>
+            {% endif %}
+            
+            {% if order.state == 'ready' %}
+            <form method="post" action="{% url 'so-deliver' order.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-green-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-green-700">Mark Delivered</button>
+            </form>
+            {% endif %}
+            
+            {% if order.state == 'delivered' %}
+            <form method="post" action="{% url 'so-create-invoice' order.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-purple-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-purple-700">Create Invoice</button>
+            </form>
+            <form method="post" action="{% url 'so-complete' order.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-green-600 text-white py-2 px-4 text-sm rounded-lg hover:bg-green-700">Complete</button>
+            </form>
+            {% endif %}
+            
+            {% if order.state not in 'delivered,done,cancelled' %}
+            <form method="post" action="{% url 'so-cancel' order.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-red-500 text-white py-2 px-4 text-sm rounded-lg hover:bg-red-600">Cancel</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Info -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">Date</p>
+            <p class="font-medium">{{ order.date }}</p>
+        </div>
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">Expected</p>
+            <p class="font-medium">{{ order.expected_date|default:"Not set" }}</p>
+        </div>
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">Customer</p>
+            <p class="font-medium">
+                <a href="{% url 'customer-detail' order.customer.pk %}" class="text-blue-600 hover:underline">
+                    {{ order.customer.name }}
+                </a>
+            </p>
+        </div>
+        <div class="bg-white rounded-lg border border-neutral-200 p-4">
+            <p class="text-sm text-neutral-500 mb-1">Total Amount</p>
+            <p class="text-xl font-semibold text-blue-600">Rp {{ order.total_amount|floatformat:0|intcomma }}</p>
+        </div>
+    </div>
+    
+    <!-- Lines -->
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-neutral-800">Lines</h3>
+            {% if order.state == 'draft' %}
+            <a href="{% url 'so-line-create' order.pk %}" class="bg-blue-600 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"/></svg>
+                Add Line
+            </a>
+            {% endif %}
+        </div>
+        
+        <table class="w-full">
+            <thead>
+                <tr class="border-b">
+                    <th class="p-2 text-left">Product</th>
+                    <th class="text-left w-20">UoM</th>
+                    <th class="text-right w-20">Qty</th>
+                    <th class="text-right w-24">Delivered</th>
+                    <th class="text-right w-28">Unit Price</th>
+                    <th class="text-right w-20">Disc %</th>
+                    <th class="text-right w-32">Subtotal</th>
+                    {% if order.state == 'draft' %}<th class="w-16"></th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for line in lines %}
+                <tr class="border-b last:border-0">
+                    <td class="p-2">
+                        <p class="font-medium">{{ line.product.name }}</p>
+                        {% if line.description != line.product.name %}
+                        <p class="text-xs text-neutral-500">{{ line.description }}</p>
+                        {% endif %}
+                    </td>
+                    <td>{{ line.product.uom.symbol }}</td>
+                    <td class="text-right font-mono">{{ line.quantity|floatformat:2 }}</td>
+                    <td class="text-right">
+                        <span class="font-mono {% if line.is_fully_delivered %}text-green-600{% else %}text-amber-600{% endif %}">
+                            {{ line.quantity_delivered|floatformat:2 }}
+                        </span>
+                        {% if line.is_fully_delivered %}
+                        <span class="text-green-600 text-xs ml-1">✓</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right font-mono">Rp {{ line.unit_price|floatformat:0|intcomma }}</td>
+                    <td class="text-right">{{ line.discount_percent|floatformat:0 }}%</td>
+                    <td class="text-right font-mono font-semibold">Rp {{ line.subtotal|floatformat:0|intcomma }}</td>
+                    {% if order.state == 'draft' %}
+                    <td class="text-right">
+                        <form method="post" action="{% url 'so-line-delete' line.pk %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-600 hover:underline text-sm">Delete</button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="p-4 text-center text-neutral-500">No lines added yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="bg-neutral-50">
+                <tr>
+                    <td colspan="{% if order.state == 'draft' %}6{% else %}5{% endif %}" class="p-2 text-right font-medium">Untaxed:</td>
+                    <td class="p-2 text-right font-mono">Rp {{ order.untaxed_amount|floatformat:0|intcomma }}</td>
+                    {% if order.state == 'draft' %}<td></td>{% endif %}
+                </tr>
+                <tr>
+                    <td colspan="{% if order.state == 'draft' %}6{% else %}5{% endif %}" class="p-2 text-right font-medium">Tax (11%):</td>
+                    <td class="p-2 text-right font-mono">Rp {{ order.tax_amount|floatformat:0|intcomma }}</td>
+                    {% if order.state == 'draft' %}<td></td>{% endif %}
+                </tr>
+                {% if order.discount_amount %}
+                <tr>
+                    <td colspan="{% if order.state == 'draft' %}6{% else %}5{% endif %}" class="p-2 text-right font-medium">Discount:</td>
+                    <td class="p-2 text-right font-mono text-red-600">-Rp {{ order.discount_amount|floatformat:0|intcomma }}</td>
+                    {% if order.state == 'draft' %}<td></td>{% endif %}
+                </tr>
+                {% endif %}
+                <tr class="font-semibold">
+                    <td colspan="{% if order.state == 'draft' %}6{% else %}5{% endif %}" class="p-2 text-right">Total:</td>
+                    <td class="p-2 text-right font-mono text-lg">Rp {{ order.total_amount|floatformat:0|intcomma }}</td>
+                    {% if order.state == 'draft' %}<td></td>{% endif %}
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    
+    <!-- Related Invoices -->
+    {% if order.invoices.exists %}
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-neutral-800">Invoices</h3>
+        <table class="w-full">
+            <thead>
+                <tr class="border-b">
+                    <th class="p-2 text-left">Reference</th>
+                    <th class="text-left">Date</th>
+                    <th class="text-right">Total</th>
+                    <th class="text-right">Paid</th>
+                    <th class="text-left">State</th>
+                    <th class="text-left"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in order.invoices.all %}
+                <tr class="border-b last:border-0">
+                    <td class="p-2 font-mono text-sm">{{ invoice.reference }}</td>
+                    <td>{{ invoice.date }}</td>
+                    <td class="text-right font-mono">Rp {{ invoice.total_amount|floatformat:0|intcomma }}</td>
+                    <td class="text-right font-mono text-green-600">Rp {{ invoice.amount_paid|floatformat:0|intcomma }}</td>
+                    <td>
+                        <span class="px-2 py-1 text-xs rounded-full 
+                            {% if invoice.state == 'paid' %}bg-green-100 text-green-800
+                            {% elif invoice.state == 'partial' %}bg-amber-100 text-amber-800
+                            {% else %}bg-neutral-100 text-neutral-700{% endif %}">
+                            {{ invoice.get_state_display }}
+                        </span>
+                    </td>
+                    <td class="p-2">
+                        <a href="{% url 'invoice-detail' invoice.pk %}" class="text-blue-600 hover:underline text-sm">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    {% if order.notes %}
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-2 text-neutral-800">Notes</h3>
+        <p class="text-sm">{{ order.notes|linebreaks }}</p>
+    </div>
+    {% endif %}
+    
+    <!-- Back -->
+    <a href="{% url 'so-list' %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium inline-block">
+        &larr; Back to Sales Orders
+    </a>
+</div>
+{% endblock %}
+

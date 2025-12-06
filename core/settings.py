@@ -50,6 +50,12 @@ INSTALLED_APPS = [
     "apps.payrolls",
     "apps.leaves",
     "apps.authentications",
+    "apps.products",
+    "apps.vendors",
+    "apps.inventory",
+    "apps.purchasing",
+    "apps.manufacturing",
+    "apps.sales",
     "huey.contrib.djhuey"
 ]
 

@@ -1,0 +1,194 @@
+{% extends 'dashboard_base.html' %}
+{% load humanize %}
+
+{% block page_name %}
+{{ quotation.reference }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+            <h2 class="text-xl font-bold text-neutral-900">{{ quotation.customer.name }}</h2>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                {% if quotation.state == 'draft' %}bg-neutral-100 text-neutral-700
+                {% elif quotation.state == 'sent' %}bg-blue-100 text-blue-800
+                {% elif quotation.state == 'confirmed' %}bg-green-100 text-green-800
+                {% elif quotation.state == 'expired' %}bg-amber-100 text-amber-800
+                {% else %}bg-red-100 text-red-800{% endif %}">
+                {{ quotation.get_state_display }}
+            </span>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            {% if quotation.state == 'draft' %}
+            <a href="{% url 'quotation-update' quotation.pk %}" class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-lg text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">Edit</a>
+            <form method="post" action="{% url 'quotation-send' quotation.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">Send</button>
+            </form>
+            {% endif %}
+            
+            {% if quotation.state == 'sent' %}
+            <form method="post" action="{% url 'quotation-convert' quotation.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">Convert to Order</button>
+            </form>
+            {% endif %}
+            
+            {% if quotation.state not in 'confirmed,cancelled' %}
+            <form method="post" action="{% url 'quotation-cancel' quotation.pk %}" class="inline" onsubmit="return confirm('Are you sure you want to cancel this quotation?');">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">Cancel</button>
+            </form>
+            {% endif %}
+            
+            {% if quotation.sales_order %}
+            <a href="{% url 'so-detail' quotation.sales_order.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                View Order ({{ quotation.sales_order.reference }})
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Info Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Date</p>
+            <p class="text-lg font-semibold text-neutral-900">{{ quotation.date }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Valid Until</p>
+            <p class="text-lg font-semibold {% if quotation.is_expired %}text-red-600{% else %}text-neutral-900{% endif %}">
+                {{ quotation.validity_date|default:"Not set" }}
+            </p>
+        </div>
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Customer</p>
+            <a href="{% url 'customer-detail' quotation.customer.pk %}" class="text-lg font-semibold text-blue-600 hover:underline">
+                {{ quotation.customer.name }}
+            </a>
+        </div>
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Total Amount</p>
+            <p class="text-lg font-semibold text-green-600 font-mono">Rp {{ quotation.total_amount|floatformat:0|intcomma }}</p>
+        </div>
+    </div>
+    
+    <!-- Lines Table -->
+    <div class="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-neutral-200 flex justify-between items-center bg-neutral-50/50">
+            <h3 class="text-base font-semibold text-neutral-900">Lines</h3>
+            {% if quotation.state == 'draft' %}
+            <a href="{% url 'quotation-line-create' quotation.pk %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                Add Line
+            </a>
+            {% endif %}
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200">
+                <thead class="bg-neutral-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/3">Product</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">UoM</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Qty</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Unit Price</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Disc %</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Subtotal</th>
+                        {% if quotation.state == 'draft' %}<th scope="col" class="px-6 py-3 w-20"></th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-neutral-200">
+                    {% for line in lines %}
+                    <tr class="hover:bg-neutral-50 transition-colors group">
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-medium text-neutral-900">{{ line.product.name }}</span>
+                                {% if line.description != line.product.name %}
+                                <span class="text-xs text-neutral-500 mt-0.5">{{ line.description }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                            {{ line.product.uom.symbol }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 text-right font-mono">
+                            {{ line.quantity|floatformat:2 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-right font-mono">
+                            Rp {{ line.unit_price|floatformat:0|intcomma }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-right font-mono">
+                            {{ line.discount_percent|floatformat:0 }}%
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 text-right font-mono">
+                            Rp {{ line.subtotal|floatformat:0|intcomma }}
+                        </td>
+                        {% if quotation.state == 'draft' %}
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <a href="{% url 'quotation-line-update' line.pk %}" class="text-blue-600 hover:text-blue-900">Edit</a>
+                                <form method="post" action="{% url 'quotation-line-delete' line.pk %}" class="inline" onsubmit="return confirm('Are you sure?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if quotation.state == 'draft' %}7{% else %}6{% endif %}" class="px-6 py-12 text-center text-neutral-500">
+                            No lines added yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="bg-neutral-50 border-t border-neutral-200">
+                    <tr>
+                        <td colspan="{% if quotation.state == 'draft' %}5{% else %}4{% endif %}" class="px-6 py-3 text-right text-sm font-medium text-neutral-500">Untaxed Amount</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-neutral-900 font-mono">Rp {{ quotation.untaxed_amount|floatformat:0|intcomma }}</td>
+                        {% if quotation.state == 'draft' %}<td></td>{% endif %}
+                    </tr>
+                    <tr>
+                        <td colspan="{% if quotation.state == 'draft' %}5{% else %}4{% endif %}" class="px-6 py-3 text-right text-sm font-medium text-neutral-500">Tax (11%)</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-neutral-900 font-mono">Rp {{ quotation.tax_amount|floatformat:0|intcomma }}</td>
+                        {% if quotation.state == 'draft' %}<td></td>{% endif %}
+                    </tr>
+                    {% if quotation.discount_amount %}
+                    <tr>
+                        <td colspan="{% if quotation.state == 'draft' %}5{% else %}4{% endif %}" class="px-6 py-3 text-right text-sm font-medium text-neutral-500">Discount</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-red-600 font-mono">-Rp {{ quotation.discount_amount|floatformat:0|intcomma }}</td>
+                        {% if quotation.state == 'draft' %}<td></td>{% endif %}
+                    </tr>
+                    {% endif %}
+                    <tr class="bg-neutral-100 font-semibold">
+                        <td colspan="{% if quotation.state == 'draft' %}5{% else %}4{% endif %}" class="px-6 py-4 text-right text-base text-neutral-900">Total</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-base text-blue-600 font-mono">Rp {{ quotation.total_amount|floatformat:0|intcomma }}</td>
+                        {% if quotation.state == 'draft' %}<td></td>{% endif %}
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    
+    {% if quotation.notes %}
+    <div class="bg-white rounded-xl border border-neutral-200 p-6 shadow-sm">
+        <h3 class="text-base font-semibold mb-2 text-neutral-900">Notes</h3>
+        <div class="prose prose-sm text-neutral-600 max-w-none">
+            {{ quotation.notes|linebreaks }}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Back Link -->
+    <div>
+        <a href="{% url 'quotation-list' %}" class="inline-flex items-center text-sm font-medium text-neutral-500 hover:text-neutral-700 transition-colors">
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Back to Quotations
+        </a>
+    </div>
+</div>
+{% endblock %}

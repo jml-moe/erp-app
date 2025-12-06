@@ -1,0 +1,62 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+{% if form.instance.pk %}Edit Unit of Measure{% else %}Create Unit of Measure{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-xl">
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <div class="bg-white rounded-lg border border-neutral-200 p-6">
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Unit Name *</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<p class="text-red-500 text-xs mt-1">{{ form.name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Symbol *</label>
+                        {{ form.symbol }}
+                        {% if form.symbol.errors %}<p class="text-red-500 text-xs mt-1">{{ form.symbol.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Category *</label>
+                    {{ form.category }}
+                    <p class="text-neutral-500 text-xs mt-1">Group similar units together (e.g., kg and gram in Weight)</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Conversion Ratio</label>
+                    {{ form.ratio }}
+                    <p class="text-neutral-500 text-xs mt-1">Ratio to base unit (e.g., 1000 for gram when kg is base)</p>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    {{ form.is_base_unit }}
+                    <label class="text-sm font-medium text-neutral-700">Is Base Unit</label>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    {{ form.is_active }}
+                    <label class="text-sm font-medium text-neutral-700">Active</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex gap-4">
+            <button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 font-medium">
+                {% if form.instance.pk %}Update Unit{% else %}Create Unit{% endif %}
+            </button>
+            <a href="{% url 'uom-list' %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

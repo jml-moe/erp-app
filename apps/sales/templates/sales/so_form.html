@@ -1,0 +1,50 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+{% if object %}Edit Sales Order{% else %}New Sales Order{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-2xl">
+    <form method="post" class="bg-white rounded-lg border border-neutral-200 p-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="col-span-2">
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Customer *</label>
+                {{ form.customer }}
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Expected Date</label>
+                {{ form.expected_date }}
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Source Location</label>
+                {{ form.source_location }}
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Discount Amount</label>
+                {{ form.discount_amount }}
+            </div>
+            
+            <div class="col-span-2">
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Notes</label>
+                {{ form.notes }}
+            </div>
+        </div>
+        
+        <div class="flex justify-end gap-2">
+            <a href="{% url 'so-list' %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium">
+                Cancel
+            </a>
+            <button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 font-medium">
+                {% if object %}Update{% else %}Create{% endif %} Order
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

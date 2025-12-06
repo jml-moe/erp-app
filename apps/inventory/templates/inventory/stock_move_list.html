@@ -1,0 +1,79 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+Stock Moves
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="mb-6 flex justify-between items-center">
+    <div class="flex gap-4">
+        <form method="get" class="flex gap-2">
+            <select name="state" class="pl-4 pr-12 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All States</option>
+                <option value="draft" {% if request.GET.state == 'draft' %}selected{% endif %}>Draft</option>
+                <option value="confirmed" {% if request.GET.state == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                <option value="done" {% if request.GET.state == 'done' %}selected{% endif %}>Done</option>
+                <option value="cancelled" {% if request.GET.state == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+            <select name="type" class="pl-4 pr-12 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All Types</option>
+                <option value="incoming" {% if request.GET.type == 'incoming' %}selected{% endif %}>Incoming</option>
+                <option value="outgoing" {% if request.GET.type == 'outgoing' %}selected{% endif %}>Outgoing</option>
+                <option value="internal" {% if request.GET.type == 'internal' %}selected{% endif %}>Internal</option>
+            </select>
+            <button type="submit" class="bg-neutral-200 text-neutral-700 py-2 px-4 text-sm rounded-lg hover:bg-neutral-300">
+                Filter
+            </button>
+        </form>
+    </div>
+</div>
+
+<table class="w-full border border-blue-200">
+    <thead>
+        <tr class="bg-white">
+            <th class="p-4 text-left w-32">Reference</th>
+            <th class="text-left">Product</th>
+            <th class="text-left w-36">From</th>
+            <th class="text-left w-36">To</th>
+            <th class="text-right w-24">Qty</th>
+            <th class="text-left w-24">Type</th>
+            <th class="text-left w-24">State</th>
+            <th class="text-left w-40">Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for move in moves %}
+        <tr class="bg-blue-50/30 odd:bg-blue-50">
+            <td class="p-4 font-mono text-sm">{{ move.reference }}</td>
+            <td>{{ move.product.name }}</td>
+            <td class="text-sm">{{ move.location_src }}</td>
+            <td class="text-sm">{{ move.location_dest }}</td>
+            <td class="text-right font-mono">{{ move.quantity_done }}/{{ move.quantity }}</td>
+            <td>
+                <span class="px-2 py-1 text-xs rounded-full 
+                    {% if move.move_type == 'incoming' %}bg-green-100 text-green-800
+                    {% elif move.move_type == 'outgoing' %}bg-red-100 text-red-800
+                    {% else %}bg-blue-100 text-blue-800{% endif %}">
+                    {{ move.get_move_type_display }}
+                </span>
+            </td>
+            <td>
+                <span class="px-2 py-1 text-xs rounded-full 
+                    {% if move.state == 'done' %}bg-green-100 text-green-800
+                    {% elif move.state == 'cancelled' %}bg-red-100 text-red-800
+                    {% elif move.state == 'draft' %}bg-neutral-100 text-neutral-700
+                    {% else %}bg-amber-100 text-amber-800{% endif %}">
+                    {{ move.get_state_display }}
+                </span>
+            </td>
+            <td class="text-sm">{{ move.created_at|date:"d M Y H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" class="p-4 text-center text-neutral-500">No stock moves found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+

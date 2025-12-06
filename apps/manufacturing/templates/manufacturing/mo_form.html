@@ -1,0 +1,89 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+{% if form.instance.pk %}Edit Manufacturing Order{% else %}New Manufacturing Order{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-xl">
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <div class="bg-white rounded-lg border border-neutral-200 p-6">
+            <h3 class="text-lg font-semibold mb-4 text-neutral-800">Product & BOM</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Product to Manufacture *</label>
+                    {{ form.product }}
+                    {% if form.product.errors %}<p class="text-red-500 text-xs mt-1">{{ form.product.errors.0 }}</p>{% endif %}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Bill of Materials</label>
+                    {{ form.bom }}
+                    <p class="text-neutral-500 text-xs mt-1">Select BOM to auto-populate components</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Quantity to Produce *</label>
+                    {{ form.quantity }}
+                    {% if form.quantity.errors %}<p class="text-red-500 text-xs mt-1">{{ form.quantity.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg border border-neutral-200 p-6">
+            <h3 class="text-lg font-semibold mb-4 text-neutral-800">Locations</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Source Location (Components) *</label>
+                    {{ form.source_location }}
+                    <p class="text-neutral-500 text-xs mt-1">Where to consume components from</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Destination Location (Finished) *</label>
+                    {{ form.destination_location }}
+                    <p class="text-neutral-500 text-xs mt-1">Where to store finished products</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg border border-neutral-200 p-6">
+            <h3 class="text-lg font-semibold mb-4 text-neutral-800">Scheduling</h3>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Scheduled Date</label>
+                        {{ form.scheduled_date }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Priority</label>
+                        {{ form.priority }}
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Origin Document</label>
+                    {{ form.origin }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Notes</label>
+                    {{ form.notes }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex gap-4">
+            <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 font-medium">
+                {% if form.instance.pk %}Update MO{% else %}Create MO{% endif %}
+            </button>
+            <a href="{% url 'mo-list' %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
