@@ -59,6 +59,9 @@ REDIS_PORT=6379
 # Migrasi database
 python manage.py migrate
 
+# Seed Command buat generate data dummy   
+python manage.py seed_data
+
 # Buat superuser
 python manage.py createsuperuser
 ```
