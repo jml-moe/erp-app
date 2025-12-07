@@ -210,6 +210,18 @@ class PurchaseOrder(BaseModel):
         related_name='purchase_orders'
     )
 
+    # Vendor billing
+    bill_reference = models.CharField(max_length=50, blank=True, help_text='Vendor bill/invoice reference')
+    bill_date = models.DateField(null=True, blank=True, help_text='Date of vendor bill')
+    bill_amount = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text='Amount billed by vendor'
+    )
+    payment_date = models.DateField(null=True, blank=True, help_text='Date payment was made')
+    payment_reference = models.CharField(max_length=100, blank=True, help_text='Payment reference')
+
     class Meta:
         ordering = ['-created_at']
 

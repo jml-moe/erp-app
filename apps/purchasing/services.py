@@ -250,11 +250,41 @@ class POService:
         return po
     
     @staticmethod
+    def mark_billed(po, bill_reference='', bill_date=None, bill_amount=None):
+        """Mark PO as billed by vendor"""
+        if po.state != 'received':
+            raise ValueError("PO must be fully received before billing")
+
+        po.state = 'billed'
+        if bill_reference:
+            po.bill_reference = bill_reference
+        if bill_date:
+            po.bill_date = bill_date
+        if bill_amount is not None:
+            po.bill_amount = bill_amount
+        else:
+            po.bill_amount = po.total_amount
+        po.save(update_fields=['state', 'bill_reference', 'bill_date', 'bill_amount'])
+        return po
+
+    @staticmethod
+    def record_payment(po, payment_date=None, payment_reference=''):
+        """Record payment made to vendor"""
+        if po.state != 'billed':
+            raise ValueError("PO must be billed before recording payment")
+
+        po.state = 'done'
+        po.payment_date = payment_date or timezone.now().date()
+        po.payment_reference = payment_reference
+        po.save(update_fields=['state', 'payment_date', 'payment_reference'])
+        return po
+
+    @staticmethod
     def cancel_po(po):
         """Cancel Purchase Order"""
         if po.state in ['received', 'billed', 'done']:
             raise ValueError("Cannot cancel PO that has been received or billed")
-        
+
         po.state = 'cancelled'
         po.save(update_fields=['state'])
         return po

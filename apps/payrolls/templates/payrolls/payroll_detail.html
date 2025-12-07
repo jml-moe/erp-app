@@ -1,0 +1,47 @@
+{% extends 'dashboard_base.html' %}
+{% load humanize %}
+
+{% block page_name %}
+Payroll Detail
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-sm text-neutral-500">Payroll</p>
+            <h1 class="text-2xl font-bold text-neutral-900">{{ payroll.month|date:"F Y" }}</h1>
+            {% if payroll.employee %}<p class="text-neutral-600">{{ payroll.employee.full_name }}</p>{% endif %}
+        </div>
+        {% if user_settings.role == 'manager' %}
+        <a href="{% url 'payroll-update' payroll.pk %}"
+            class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Edit</a>
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-xl border border-neutral-200 p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+            <p class="text-xs uppercase text-neutral-500">Month</p>
+            <p class="text-base font-semibold text-neutral-900">{{ payroll.month|date:"F Y" }}</p>
+        </div>
+        <div>
+            <p class="text-xs uppercase text-neutral-500">Amount</p>
+            <p class="text-base font-semibold text-neutral-900">Rp {{ payroll.amount|floatformat:0|intcomma }}</p>
+        </div>
+        <div>
+            <p class="text-xs uppercase text-neutral-500">Status</p>
+            {% if payroll.status == 'paid' %}
+            <span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-semibold">Paid</span>
+            {% elif payroll.status == 'processing' %}
+            <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold">Processing</span>
+            {% else %}
+            <span class="bg-rose-100 text-rose-700 px-2 py-1 rounded-full text-xs font-semibold">Pending</span>
+            {% endif %}
+        </div>
+        <div>
+            <p class="text-xs uppercase text-neutral-500">Employee</p>
+            <p class="text-base font-semibold text-neutral-900">{{ payroll.employee.full_name|default:"-" }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

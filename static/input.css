@@ -1,44 +1,75 @@
 @import "tailwindcss";
 
 @layer base {
-    a {
-        @apply block w-fit
-    }
+  /* Custom scrollbar styling */
+  * {
+    scrollbar-width: thin; /* Firefox - thin scrollbar */
+    scrollbar-color: #3b82f6 #f3f4f6; /* Firefox - thumb and track color */
+  }
 
-    h1 {
-        @apply leading-tight font-semibold text-2xl;
-    }
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  *::-webkit-scrollbar {
+    width: 8px; /* Width of vertical scrollbar */
+    height: 8px; /* Height of horizontal scrollbar */
+  }
 
-    h2 {
-        @apply leading-tight font-semibold text-xl;
-    }
+  *::-webkit-scrollbar-track {
+    background: #f3f4f6; /* Light gray track */
+    border-radius: 10px;
+  }
 
-    h3 {
-        @apply leading-tight font-semibold text-lg;
-    }
+  *::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #3b82f6, #2563eb); /* Blue gradient */
+    border-radius: 10px;
+    border: 2px solid #f3f4f6; /* Adds padding effect */
+  }
 
-    input {
-        @apply p-2 border border-neutral-200 shadow-xl shadow-neutral-50 rounded-lg outline-none focus:outline-none w-full;
-    }
+  *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      180deg,
+      #2563eb,
+      #1d4ed8
+    ); /* Darker blue on hover */
+  }
 
-    button {
-        @apply cursor-pointer bg-blue-600 p-2 rounded-lg text-white w-full hover:opacity-80;
-    }
+  a {
+    @apply block w-fit;
+  }
 
-    select {
-        @apply p-2 pl-4 pr-10 border border-neutral-200 shadow-xl shadow-neutral-50 rounded-lg outline-none focus:outline-none appearance-none cursor-pointer;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-    }
+  h1 {
+    @apply leading-tight font-semibold text-2xl;
+  }
+
+  h2 {
+    @apply leading-tight font-semibold text-xl;
+  }
+
+  h3 {
+    @apply leading-tight font-semibold text-lg;
+  }
+
+  input {
+    @apply p-2 border border-neutral-200 shadow-xl shadow-neutral-50 rounded-lg outline-none focus:outline-none w-full;
+  }
+
+  button {
+    @apply cursor-pointer bg-blue-600 p-2 rounded-lg text-white w-full hover:opacity-80;
+  }
+
+  select {
+    @apply p-2 pl-4 pr-10 border border-neutral-200 shadow-xl shadow-neutral-50 rounded-lg outline-none focus:outline-none appearance-none cursor-pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
 }
 
 @layer components {
-    .menu {
-        @apply flex gap-2 items-center w-full text-sm font-medium px-3 py-2 rounded-lg hover:bg-white hover:text-black hover:shadow-lg hover:shadow-blue-700 border border-transparent hover:border-blue-500 transition duration-150 ease-in-out;
-    }
+  .menu {
+    @apply flex gap-2 items-center w-full text-sm font-medium px-3 py-2 rounded-lg hover:bg-white hover:text-black hover:shadow-lg hover:shadow-blue-700 border border-transparent hover:border-blue-500 transition duration-150 ease-in-out;
+  }
 
-    .menu-inactive {
-        @apply cursor-text flex gap-2 items-center w-full text-sm font-medium px-3 py-2 rounded-lg border border-transparent opacity-40;
-    }
+  .menu-inactive {
+    @apply cursor-text flex gap-2 items-center w-full text-sm font-medium px-3 py-2 rounded-lg border border-transparent opacity-40;
+  }
 }

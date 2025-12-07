@@ -11,7 +11,12 @@ def process_payrolls():
     for employee in employees:
         salary = employee.salary
         print(f"Processing payroll for employee {employee.full_name} with amount {employee.salary}")
-        payroll = Payroll.objects.create(actor=employee.actor, amount=salary, status='pending')
+        payroll = Payroll.objects.create(
+            employee=employee,
+            actor=employee.actor,
+            amount=salary,
+            status='pending'
+        )
 
         time.sleep(15)
         payroll.status = 'paid'

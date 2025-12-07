@@ -111,22 +111,22 @@ class SalesQuotation(BaseModel):
         on_delete=models.CASCADE,
         related_name='quotations'
     )
-    
+
     # Dates
     date = models.DateField(auto_now_add=True)
     validity_date = models.DateField(
-        null=True, 
+        null=True,
         blank=True,
         help_text='Quotation valid until this date'
     )
-    
+
     # State
     state = models.CharField(
         max_length=20,
         choices=QUOTATION_STATE_CHOICES,
         default='draft'
     )
-    
+
     # Totals
     untaxed_amount = models.DecimalField(
         max_digits=14,
@@ -148,9 +148,9 @@ class SalesQuotation(BaseModel):
         decimal_places=2,
         default=Decimal('0.00')
     )
-    
+
     notes = models.TextField(blank=True)
-    
+
     # Link to SO if converted
     sales_order = models.OneToOneField(
         'SalesOrder',
@@ -259,22 +259,31 @@ class SalesOrder(BaseModel):
         on_delete=models.CASCADE,
         related_name='sales_orders'
     )
-    
+
+    # Link to quotation source
+    quotation = models.OneToOneField(
+        'SalesQuotation',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='converted_order'
+    )
+
     # Dates
     date = models.DateField(auto_now_add=True)
     expected_date = models.DateField(
-        null=True, 
+        null=True,
         blank=True,
         help_text='Expected delivery/pickup date'
     )
-    
+
     # State
     state = models.CharField(
         max_length=20,
         choices=SO_STATE_CHOICES,
         default='draft'
     )
-    
+
     # Location (for internal stock operations)
     source_location = models.ForeignKey(
         Location,
@@ -283,7 +292,7 @@ class SalesOrder(BaseModel):
         blank=True,
         related_name='sales_orders'
     )
-    
+
     # Totals
     untaxed_amount = models.DecimalField(
         max_digits=14,
@@ -305,9 +314,9 @@ class SalesOrder(BaseModel):
         decimal_places=2,
         default=Decimal('0.00')
     )
-    
+
     notes = models.TextField(blank=True)
-    
+
     # Related picking for delivery
     picking = models.ForeignKey(
         StockPicking,

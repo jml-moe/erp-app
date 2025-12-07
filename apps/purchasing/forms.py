@@ -3,6 +3,7 @@ from .models import RequestForQuotation, RFQLine, PurchaseOrder, POLine
 from apps.vendors.models import Vendor
 from apps.products.models import Product
 from apps.inventory.models import Location
+from decimal import Decimal
 
 
 class RFQForm(forms.ModelForm):
@@ -152,6 +153,54 @@ class ConvertRFQForm(forms.Form):
         queryset=Location.objects.filter(is_active=True, location_type='internal'),
         widget=forms.Select(attrs={
             'class': 'w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+        })
+    )
+
+
+class POBillingForm(forms.Form):
+    """Form for vendor billing"""
+    bill_reference = forms.CharField(
+        max_length=50,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'placeholder': 'Vendor invoice/bill reference'
+        })
+    )
+    bill_date = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={
+            'class': 'w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'type': 'date'
+        })
+    )
+    bill_amount = forms.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        required=True,
+        widget=forms.NumberInput(attrs={
+            'class': 'w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'step': '0.01',
+            'min': '0.01'
+        })
+    )
+
+
+class POPaymentForm(forms.Form):
+    """Form for recording payment to vendor"""
+    payment_date = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={
+            'class': 'w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'type': 'date'
+        })
+    )
+    payment_reference = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'placeholder': 'Payment reference (optional)'
         })
     )
 

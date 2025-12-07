@@ -40,17 +40,11 @@
             {% endif %}
             
             {% if po.state == 'received' %}
-            <form method="post" action="{% url 'po-mark-billed' po.pk %}" class="inline">
-                {% csrf_token %}
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">Mark Billed</button>
-            </form>
+            <a href="{% url 'po-mark-billed' po.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">Record Billing</a>
             {% endif %}
             
             {% if po.state == 'billed' %}
-            <form method="post" action="{% url 'po-mark-done' po.pk %}" class="inline">
-                {% csrf_token %}
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">Mark Done</button>
-            </form>
+            <a href="{% url 'po-mark-done' po.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">Record Payment</a>
             {% endif %}
             
             {% if po.state not in 'received,billed,done,cancelled' %}
@@ -81,6 +75,38 @@
             <p class="text-lg font-semibold text-blue-600 font-mono">Rp {{ po.total_amount|floatformat:0|intcomma }}</p>
         </div>
     </div>
+
+    <!-- Billing Information -->
+    {% if po.state in 'billed,done' %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Bill Reference</p>
+            <p class="text-lg font-semibold text-neutral-900">{{ po.bill_reference|default:"Not set" }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Bill Date</p>
+            <p class="text-lg font-semibold text-neutral-900">{{ po.bill_date|default:"Not set" }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Bill Amount</p>
+            <p class="text-lg font-semibold text-purple-600 font-mono">Rp {{ po.bill_amount|floatformat:0|intcomma }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Payment Information -->
+    {% if po.state == 'done' %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Payment Date</p>
+            <p class="text-lg font-semibold text-neutral-900">{{ po.payment_date|default:"Not set" }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-1">Payment Reference</p>
+            <p class="text-lg font-semibold text-neutral-900">{{ po.payment_reference|default:"Not set" }}</p>
+        </div>
+    </div>
+    {% endif %}
     
     <!-- Receive Products Form -->
     {% if po.state in 'sent,partially_received' %}

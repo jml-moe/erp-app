@@ -1,0 +1,51 @@
+{% extends 'dashboard_base.html' %}
+{% load humanize %}
+
+{% block page_name %}
+Employee Detail
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-sm text-neutral-500">Employee</p>
+            <h1 class="text-2xl font-bold text-neutral-900">{{ employee.full_name }}</h1>
+            <p class="text-neutral-600">{{ employee.job_title }}</p>
+        </div>
+        {% if user_settings.role == 'manager' %}
+        <a href="{% url 'employee-update' employee.pk %}"
+            class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Edit</a>
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-xl border border-neutral-200 p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+            <p class="text-xs uppercase text-neutral-500">Job Title</p>
+            <p class="text-base font-semibold text-neutral-900">{{ employee.job_title }}</p>
+        </div>
+        <div>
+            <p class="text-xs uppercase text-neutral-500">Status</p>
+            {% if employee.is_active %}
+            <span
+                class="inline-flex items-center bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-semibold">Active</span>
+            {% else %}
+            <span
+                class="inline-flex items-center bg-rose-100 text-rose-700 px-2 py-1 rounded-full text-xs font-semibold">Inactive</span>
+            {% endif %}
+        </div>
+        <div>
+            <p class="text-xs uppercase text-neutral-500">Start Date</p>
+            <p class="text-base font-semibold text-neutral-900">{{ employee.start_date|date:"F j, Y" }}</p>
+        </div>
+        <div>
+            <p class="text-xs uppercase text-neutral-500">Date of Birth</p>
+            <p class="text-base font-semibold text-neutral-900">{{ employee.date_of_birth|date:"F j, Y" }}</p>
+        </div>
+        <div>
+            <p class="text-xs uppercase text-neutral-500">Salary</p>
+            <p class="text-base font-semibold text-neutral-900">Rp {{ employee.salary|floatformat:0|intcomma }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

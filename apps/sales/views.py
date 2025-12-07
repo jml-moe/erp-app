@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, View
 from django.urls import reverse
 from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 
 from core.views import LoginRequiredMixinView
 from apps.employees.models import EmployeeSetting
@@ -188,10 +188,32 @@ class QuotationSendView(LoginRequiredMixinView, View):
 
 
 class QuotationConvertToOrderView(LoginRequiredMixinView, View):
+    def get(self, request, pk):
+        quotation = get_object_or_404(SalesQuotation, pk=pk)
+        from apps.inventory.models import Location
+        locations = Location.objects.filter(location_type='internal', is_active=True)
+
+        context = {
+            'quotation': quotation,
+            'locations': locations,
+        }
+        user_settings, _ = EmployeeSetting.objects.get_or_create(actor=request.user)
+        context["user_settings"] = user_settings
+
+        return render(request, 'sales/quotation_convert_form.html', context)
+
     def post(self, request, pk):
         quotation = get_object_or_404(SalesQuotation, pk=pk)
+        location_id = request.POST.get('source_location')
+
+        if not location_id:
+            messages.error(request, 'Please select a source location.')
+            return redirect('quotation-convert', pk=pk)
+
         try:
-            so = SalesService.convert_quotation_to_order(quotation)
+            from apps.inventory.models import Location
+            location = Location.objects.get(id=location_id)
+            so = SalesService.convert_quotation_to_order(quotation, source_location=location)
             messages.success(request, f'Quotation converted to {so.reference}')
             return redirect('so-detail', pk=so.pk)
         except ValueError as e:
@@ -238,18 +260,7 @@ class SODetailView(LoginRequiredMixinView, BaseContextMixin, DetailView):
         return context
 
 
-class SOCreateView(LoginRequiredMixinView, BaseContextMixin, CreateView):
-    model = SalesOrder
-    form_class = SalesOrderForm
-    template_name = "sales/so_form.html"
-    
-    def form_valid(self, form):
-        form.instance.actor = self.request.user
-        messages.success(self.request, 'Sales Order created.')
-        return super().form_valid(form)
-    
-    def get_success_url(self):
-        return reverse('so-detail', kwargs={'pk': self.object.pk})
+# SOCreateView removed - Sales Orders are only created from Quotations
 
 
 class SOUpdateView(LoginRequiredMixinView, BaseContextMixin, UpdateView):
@@ -305,7 +316,7 @@ class SOProcessView(LoginRequiredMixinView, View):
     def post(self, request, pk):
         order = get_object_or_404(SalesOrder, pk=pk)
         try:
-            SalesService.mark_order_processing(order)
+            SalesService.mark_order_processing(order, user=request.user)
             messages.success(request, 'Order is now processing.')
         except ValueError as e:
             messages.error(request, str(e))
@@ -327,7 +338,7 @@ class SODeliverView(LoginRequiredMixinView, View):
     def post(self, request, pk):
         order = get_object_or_404(SalesOrder, pk=pk)
         try:
-            SalesService.deliver_order(order)
+            SalesService.deliver_order(order, user=request.user)
             messages.success(request, 'Order delivered.')
         except ValueError as e:
             messages.error(request, str(e))

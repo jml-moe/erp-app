@@ -3,13 +3,13 @@ from django.db import models
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView, View, FormView
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpResponseRedirect
 
 from core.views import LoginRequiredMixinView
 from apps.employees.models import EmployeeSetting
 from .models import RequestForQuotation, RFQLine, PurchaseOrder, POLine
-from .forms import RFQForm, RFQLineForm, POForm, POLineForm, ReceiveProductsForm, ConvertRFQForm
+from .forms import RFQForm, RFQLineForm, POForm, POLineForm, ReceiveProductsForm, ConvertRFQForm, POBillingForm, POPaymentForm
 from .services import RFQService, POService
 
 
@@ -300,25 +300,90 @@ class POReceiveView(LoginRequiredMixinView, View):
 
 
 class POMarkBilledView(LoginRequiredMixinView, View):
+    def get(self, request, pk):
+        po = get_object_or_404(PurchaseOrder, pk=pk)
+        form = POBillingForm(initial={
+            'bill_amount': po.total_amount
+        })
+
+        context = {
+            'po': po,
+            'form': form,
+        }
+        user_settings, _ = EmployeeSetting.objects.get_or_create(actor=request.user)
+        context["user_settings"] = user_settings
+
+        return render(request, 'purchasing/po_billing_form.html', context)
+
     def post(self, request, pk):
         po = get_object_or_404(PurchaseOrder, pk=pk)
-        try:
-            POService.mark_billed(po)
-            messages.success(request, 'Purchase Order marked as billed.')
-        except ValueError as e:
-            messages.error(request, str(e))
-        return redirect('po-detail', pk=pk)
+        form = POBillingForm(request.POST)
+
+        if form.is_valid():
+            try:
+                POService.mark_billed(
+                    po,
+                    bill_reference=form.cleaned_data['bill_reference'],
+                    bill_date=form.cleaned_data['bill_date'],
+                    bill_amount=form.cleaned_data['bill_amount']
+                )
+                messages.success(request, 'Purchase Order marked as billed.')
+                return redirect('po-detail', pk=pk)
+            except ValueError as e:
+                messages.error(request, str(e))
+        else:
+            messages.error(request, 'Invalid form data.')
+
+        context = {
+            'po': po,
+            'form': form,
+        }
+        user_settings, _ = EmployeeSetting.objects.get_or_create(actor=request.user)
+        context["user_settings"] = user_settings
+
+        return render(request, 'purchasing/po_billing_form.html', context)
 
 
 class POMarkDoneView(LoginRequiredMixinView, View):
+    def get(self, request, pk):
+        po = get_object_or_404(PurchaseOrder, pk=pk)
+        form = POPaymentForm()
+
+        context = {
+            'po': po,
+            'form': form,
+        }
+        user_settings, _ = EmployeeSetting.objects.get_or_create(actor=request.user)
+        context["user_settings"] = user_settings
+
+        return render(request, 'purchasing/po_payment_form.html', context)
+
     def post(self, request, pk):
         po = get_object_or_404(PurchaseOrder, pk=pk)
-        try:
-            POService.mark_done(po)
-            messages.success(request, 'Purchase Order completed.')
-        except ValueError as e:
-            messages.error(request, str(e))
-        return redirect('po-detail', pk=pk)
+        form = POPaymentForm(request.POST)
+
+        if form.is_valid():
+            try:
+                POService.record_payment(
+                    po,
+                    payment_date=form.cleaned_data['payment_date'],
+                    payment_reference=form.cleaned_data.get('payment_reference', '')
+                )
+                messages.success(request, 'Payment recorded and Purchase Order completed.')
+                return redirect('po-detail', pk=pk)
+            except ValueError as e:
+                messages.error(request, str(e))
+        else:
+            messages.error(request, 'Invalid form data.')
+
+        context = {
+            'po': po,
+            'form': form,
+        }
+        user_settings, _ = EmployeeSetting.objects.get_or_create(actor=request.user)
+        context["user_settings"] = user_settings
+
+        return render(request, 'purchasing/po_payment_form.html', context)
 
 
 class POCancelView(LoginRequiredMixinView, View):

@@ -22,7 +22,6 @@ urlpatterns = [
     
     # Sales Order URLs
     path('sales-orders/', views.SOListView.as_view(), name='so-list'),
-    path('sales-orders/new/', views.SOCreateView.as_view(), name='so-create'),
     path('sales-orders/<str:pk>/', views.SODetailView.as_view(), name='so-detail'),
     path('sales-orders/<str:pk>/edit/', views.SOUpdateView.as_view(), name='so-update'),
     path('sales-orders/<str:so_pk>/lines/new/', views.SOLineCreateView.as_view(), name='so-line-create'),

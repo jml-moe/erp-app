@@ -4,12 +4,12 @@
     <main class="flex h-screen bg-blue-600 justify-center items-center">
     <div class="w-[340px] space-y-6">
         <div class="space-y-2">
-            <h3 class="text-white text-center">Devscale HRIS</h3>
+            <h3 class="text-white text-center">Welcome to Coffe'O ERP</h3>
             <p class="text-neutral-200 text-sm text-center">Sign in to continue</p>
         </div>
         <form method="post" class="bg-white p-8 rounded-lg space-y-2">
             {% csrf_token %}
-            <input name="username" placeholder="Email" required/>
+            <input name="username" placeholder="Username" required/>
             <input name="password" placeholder="Password" type="password" required/>
             <button>Login</button>
         </form>

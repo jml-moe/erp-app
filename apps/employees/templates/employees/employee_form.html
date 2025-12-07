@@ -1,0 +1,32 @@
+{% extends 'dashboard_base.html' %}
+
+{% block page_name %}
+{% if object %}Edit Employee{% else %}Add Employee{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl border border-neutral-200 p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="space-y-1">
+                <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <p class="text-xs text-neutral-500">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                <p class="text-xs text-rose-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            <div class="pt-2 flex items-center justify-end gap-3">
+                <a href="{% url 'employee-list' %}" class="text-neutral-600 text-sm font-medium">Cancel</a>
+                <button type="submit"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

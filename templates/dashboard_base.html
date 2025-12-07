@@ -6,7 +6,7 @@
             <section class="overflow-y-auto flex-1">
                 <div class="font-semibold pl-4 pb-6 pt-4">Cafe ERP</div>
                 
-                <div class="text-xs px-4 py-1 text-white/40">Manufacturing</div>
+                <div class="text-xs px-4 py-1 text-white/70">Manufacturing</div>
                 <a href="{% url 'product-list' %}" class="menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" stroke-width="1.5">
@@ -33,7 +33,7 @@
                     </svg>
                     Manufacturing Order</a>
                 
-                <div class="text-xs px-4 py-1 text-white/40 mt-4">Buying</div>
+                <div class="text-xs px-4 py-1 text-white/70 mt-4">Buying</div>
                 <a href="{% url 'vendor-list' %}" class="menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" stroke-width="1.5">
@@ -60,7 +60,7 @@
                     </svg>
                     Request for Quotation</a>
                 
-                <div class="text-xs px-4 py-1 text-white/40 mt-4">Selling</div>
+                <div class="text-xs px-4 py-1 text-white/70 mt-4">Selling</div>
                 <a href="{% url 'customer-list' %}" class="menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" stroke-width="1.5">
@@ -96,7 +96,7 @@
                     </svg>
                     Sales Invoice</a>
                 
-                <div class="text-xs px-4 py-1 text-white/40 mt-4">Inventory</div>
+                <div class="text-xs px-4 py-1 text-white/70 mt-4">Inventory</div>
                 <a href="{% url 'stock-list' %}" class="menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" stroke-width="1.5">
@@ -122,24 +122,26 @@
                         </g>
                     </svg>
                     Locations</a>
-                <a href="{% url 'picking-list' %}" class="menu">
+
+                <!-- <a href="{% url 'picking-list' %}" class="menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="m13 2l-.1.028c-1.562.43-2.343.646-2.894 1.196c-.55.55-.766 1.332-1.196 2.894L8 9m8 13l.1-.028c1.562-.43 2.343-.646 2.894-1.196s.766-1.332 1.196-2.894L21 15" opacity=".5"/>
                             <path d="M9.825 2h4.35c1.925 0 2.888 0 3.528.562c.64.562.783 1.503 1.07 3.385l.576 3.77c.477 3.127.716 4.69-.078 5.763c-.795 1.073-2.362 1.273-5.497 1.673l-2.058.263c-1.85.237-2.775.355-3.609.02c-.835-.336-1.443-1.015-2.66-2.372L3.29 12.627c-1.197-1.337-1.796-2.005-1.81-2.78c-.012-.774.567-1.458 1.725-2.827l1.476-1.746C6.207 3.454 6.97 2.544 8.007 2.272C9.044 2 10.153 2 12.37 2Z"/>
                         </g>
                     </svg>
-                    Stock Pickings</a>
-                <a href="{% url 'stock-move-list' %}" class="menu">
+                    Stock Pickings</a> -->
+
+                <!-- <a href="{% url 'stock-move-list' %}" class="menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M12 2v20M22 12H2" opacity=".5"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 15l3-3l-3-3M5 9l-3 3l3 3M15 5l-3-3l-3 3M9 19l3 3l3-3"/>
                         </g>
                     </svg>
-                    Stock Moves</a>
+                    Stock Moves</a> -->
                 
-                <div class="text-xs px-4 py-1 text-white/40 mt-4">HR</div>
+                <div class="text-xs px-4 py-1 text-white/70 mt-4">HR</div>
                 <a href="{% url 'announcement-list' %}" class="menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" stroke-width="1.5">
@@ -169,7 +171,7 @@
                     Payroll</a>
                 
                 {% if user_settings.role == 'manager' %}
-                <div class="text-xs px-4 py-1 text-white/40 mt-4">Settings</div>
+                <div class="text-xs px-4 py-1 text-white/70 mt-4">Settings</div>
                 <a href="{% url 'category-list' %}" class="menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" stroke-width="1.5">

@@ -1,0 +1,53 @@
+{% extends 'dashboard_base.html' %}
+{% load humanize %}
+
+{% block page_name %}
+Convert {{ quotation.reference }} to Sales Order
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-xl">
+    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4">Convert Quotation to Sales Order</h3>
+
+        <div class="space-y-4 mb-6">
+            <div>
+                <p class="text-sm text-neutral-500">Quotation:</p>
+                <p class="font-medium">{{ quotation.reference }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Customer:</p>
+                <p class="font-medium">{{ quotation.customer.name }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-neutral-500">Total Amount:</p>
+                <p class="font-medium">Rp {{ quotation.total_amount|floatformat:0|intcomma }}</p>
+            </div>
+        </div>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 mb-1">Source Location *</label>
+                <select name="source_location" required class="w-full p-2 pl-4 pr-10 border border-neutral-200 shadow-xl shadow-neutral-50 rounded-lg outline-none focus:outline-none appearance-none cursor-pointer">
+                    <option value="">Select source location</option>
+                    {% for location in locations %}
+                    <option value="{{ location.id }}">{{ location.full_name }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs text-neutral-500 mt-1">Location where products will be picked from</p>
+            </div>
+
+            <div class="flex gap-4 pt-4">
+                <button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 font-medium">
+                    Convert to Sales Order
+                </button>
+                <a href="{% url 'quotation-detail' quotation.pk %}" class="bg-neutral-200 text-neutral-700 py-2 px-6 rounded-lg hover:bg-neutral-300 font-medium">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

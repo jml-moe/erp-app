@@ -10,7 +10,13 @@ Employees
     <!-- Action Bar -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 class="text-xl font-bold text-neutral-900">Employees</h2>
-        <!-- You can add a create button here if needed -->
+        {% if user_settings.role == 'manager' %}
+        <a href="{% url 'employee-create' %}"
+            class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+            <span class="text-lg leading-none">+</span>
+            Add Employee
+        </a>
+        {% endif %}
     </div>
 
     <!-- Table Card -->
@@ -19,10 +25,18 @@ Employees
             <table class="min-w-full divide-y divide-neutral-200">
                 <thead class="bg-neutral-50">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Full Name</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Position</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Start Date</th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider w-32">Action</th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                            Full Name</th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                            Position</th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                            Start Date</th>
+                        <th scope="col"
+                            class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider w-32">
+                            Action</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-neutral-200">
@@ -38,15 +52,18 @@ Employees
                             {{ e.start_date }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button class="text-white-600 ">View Details</button>
+                            <a href="{% url 'employee-detail' e.pk %}"
+                                class="text-blue-600 hover:text-blue-700 font-semibold">View Details</a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
                         <td colspan="4" class="px-6 py-12 text-center">
                             <div class="flex flex-col items-center justify-center text-neutral-500">
-                                <svg class="h-12 w-12 mb-4 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                                <svg class="h-12 w-12 mb-4 text-neutral-300" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                 </svg>
                                 <p class="text-base font-medium text-neutral-900">No employees found</p>
                             </div>
