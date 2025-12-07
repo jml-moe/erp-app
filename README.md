@@ -56,6 +56,9 @@ REDIS_PORT=6379
 ### 6. Setup Database
 
 ```bash
+# Buat migrasi database
+python manage.py makemigrations
+
 # Migrasi database
 python manage.py migrate
 
@@ -103,6 +106,9 @@ python manage.py makemigrations
 
 # Jalankan migrasi
 python manage.py migrate
+
+# Seed Command buat generate data dummy   
+python manage.py seed_data
 
 # Jalankan test
 python manage.py test
