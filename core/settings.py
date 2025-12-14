@@ -31,7 +31,12 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-v-ks&#r47w45wyq@0w^@^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
+# Parse ALLOWED_HOSTS dari environment variable
+ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "*")
+if ALLOWED_HOSTS_ENV == "*":
+    ALLOWED_HOSTS = ["*"]
+else:
+    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",")]
 
 # CSRF Trusted Origins untuk HTTPS di Railway
 CSRF_TRUSTED_ORIGINS = [
