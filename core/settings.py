@@ -33,6 +33,14 @@ DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
+# CSRF Trusted Origins untuk HTTPS di Railway
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.railway.app",
+    "https://erp-app-production.up.railway.app",
+]
+if os.environ.get("CSRF_TRUSTED_ORIGINS"):
+    CSRF_TRUSTED_ORIGINS.extend(os.environ.get("CSRF_TRUSTED_ORIGINS").split(","))
+
 
 # Application definition
 
