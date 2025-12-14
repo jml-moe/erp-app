@@ -160,10 +160,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"  # Folder untuk collected static files
+STATIC_ROOT = BASE_DIR / "static"  # Folder untuk collected static files
 
 # WhiteNoise configuration untuk production
-# Tidak perlu STATICFILES_STORAGE jika hanya ingin serve static files
 # WhiteNoise akan otomatis serve dari STATIC_ROOT
 WHITENOISE_USE_FINDERS = False  # Tidak perlu search di app folders, hanya serve dari STATIC_ROOT
 WHITENOISE_AUTOREFRESH = False  # Disable auto-refresh untuk production
