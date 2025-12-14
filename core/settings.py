@@ -163,12 +163,8 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "static"  # Folder untuk collected static files
 
 # WhiteNoise configuration untuk production
-# Gunakan CompressedStaticFilesStorage (tanpa manifest untuk lebih simple)
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
-    },
-}
+# Hapus STORAGES, biarkan WhiteNoise handle secara default
+# WhiteNoise akan otomatis serve dari STATIC_ROOT tanpa perlu storage khusus
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
