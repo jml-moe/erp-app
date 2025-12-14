@@ -49,9 +49,9 @@ COPY --from=tailwind-builder /app/static/output.css ./static/output.css
 # Collect static files
 RUN python manage.py collectstatic --noinput || true
 
-# Expose port
-EXPOSE 8000
+# Expose port (Railway akan set PORT environment variable)
+EXPOSE $PORT
 
 # Run migrations and start server with Gunicorn
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2 --timeout 120"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --threads 2 --timeout 120"]
 

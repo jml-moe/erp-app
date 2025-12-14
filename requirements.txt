@@ -3,6 +3,7 @@ black==25.1.0
 bson==0.5.10
 click==8.1.8
 Django==5.1.7
+dj-database-url==2.1.0
 huey==2.5.3
 isort==6.0.1
 mypy-extensions==1.0.0
