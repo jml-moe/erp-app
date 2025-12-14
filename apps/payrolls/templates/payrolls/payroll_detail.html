@@ -6,41 +6,232 @@ Payroll Detail
 {% endblock %}
 
 {% block dashboard_content %}
-<div class="max-w-3xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
-        <div>
-            <p class="text-sm text-neutral-500">Payroll</p>
-            <h1 class="text-2xl font-bold text-neutral-900">{{ payroll.month|date:"F Y" }}</h1>
-            {% if payroll.employee %}<p class="text-neutral-600">{{ payroll.employee.full_name }}</p>{% endif %}
+<div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-neutral-200">
+        <div class="space-y-2">
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="text-3xl font-bold text-neutral-900">Payroll - {{ payroll.month|date:"F Y" }}</h1>
+                {% if payroll.status == 'paid' %}
+                <span class="inline-flex items-center bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold">Paid</span>
+                {% elif payroll.status == 'processing' %}
+                <span class="inline-flex items-center bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Processing</span>
+                {% elif payroll.status == 'draft' %}
+                <span class="inline-flex items-center bg-neutral-100 text-neutral-700 px-3 py-1 rounded-full text-xs font-semibold">Draft</span>
+                {% elif payroll.status == 'cancelled' %}
+                <span class="inline-flex items-center bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-xs font-semibold">Cancelled</span>
+                {% else %}
+                <span class="inline-flex items-center bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-semibold">Pending</span>
+                {% endif %}
+            </div>
+            {% if payroll.employee %}
+            <p class="text-lg text-neutral-600">{{ payroll.employee.full_name }}</p>
+            {% if payroll.employee.employee_number %}
+            <p class="text-sm text-neutral-500 font-mono">{{ payroll.employee.employee_number }}</p>
+            {% endif %}
+            {% endif %}
         </div>
         {% if user_settings.role == 'manager' %}
         <a href="{% url 'payroll-update' payroll.pk %}"
-            class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Edit</a>
+            class="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Edit Payroll
+        </a>
         {% endif %}
     </div>
 
-    <div class="bg-white rounded-xl border border-neutral-200 p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-            <p class="text-xs uppercase text-neutral-500">Month</p>
-            <p class="text-base font-semibold text-neutral-900">{{ payroll.month|date:"F Y" }}</p>
+    <!-- Quick Info Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-2">Gross Salary</p>
+            <p class="text-lg font-semibold text-neutral-900 font-mono">Rp {{ payroll.gross_salary|floatformat:0|intcomma }}</p>
         </div>
-        <div>
-            <p class="text-xs uppercase text-neutral-500">Amount</p>
-            <p class="text-base font-semibold text-neutral-900">Rp {{ payroll.amount|floatformat:0|intcomma }}</p>
+        {% with total_deductions=payroll.tax_deduction|add:payroll.insurance_deduction|add:payroll.other_deduction %}
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-2">Total Deductions</p>
+            <p class="text-lg font-semibold text-rose-600 font-mono">- Rp {{ total_deductions|floatformat:0|intcomma }}</p>
         </div>
-        <div>
-            <p class="text-xs uppercase text-neutral-500">Status</p>
-            {% if payroll.status == 'paid' %}
-            <span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-semibold">Paid</span>
-            {% elif payroll.status == 'processing' %}
-            <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold">Processing</span>
-            {% else %}
-            <span class="bg-rose-100 text-rose-700 px-2 py-1 rounded-full text-xs font-semibold">Pending</span>
+        {% endwith %}
+        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-green-700 mb-2">Net Pay</p>
+            <p class="text-lg font-semibold text-green-900 font-mono">Rp {{ payroll.net_pay|floatformat:0|intcomma }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-neutral-200 p-5 shadow-sm">
+            <p class="text-sm font-medium text-neutral-500 mb-2">Payroll Period</p>
+            <p class="text-lg font-semibold text-neutral-900">{{ payroll.month|date:"M Y" }}</p>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left Column -->
+        <div class="space-y-6">
+            <!-- Employee Information -->
+            {% if payroll.employee %}
+            <div class="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 bg-neutral-50 border-b border-neutral-200">
+                    <h3 class="text-lg font-semibold text-neutral-900">Employee Information</h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-neutral-500 mb-2">Name</p>
+                            <p class="text-base font-medium text-neutral-900">{{ payroll.employee.full_name }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-neutral-500 mb-2">Job Title</p>
+                            <p class="text-base font-medium text-neutral-900">{{ payroll.employee.job_title }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-neutral-500 mb-2">Department</p>
+                            <p class="text-base font-medium text-neutral-900">{{ payroll.employee.get_department_display }}</p>
+                        </div>
+                        {% if payroll.employee.employee_number %}
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-neutral-500 mb-2">Employee ID</p>
+                            <p class="text-base font-medium text-neutral-900 font-mono">{{ payroll.employee.employee_number }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mt-6 pt-6 border-t border-neutral-200">
+                        <a href="{% url 'employee-detail' payroll.employee.pk %}" 
+                            class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                            View Employee Details
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 12h14M12 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Notes -->
+            {% if payroll.notes %}
+            <div class="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 bg-neutral-50 border-b border-neutral-200">
+                    <h3 class="text-lg font-semibold text-neutral-900">Notes</h3>
+                </div>
+                <div class="p-6">
+                    <p class="text-sm text-neutral-700 whitespace-pre-wrap leading-relaxed">{{ payroll.notes }}</p>
+                </div>
+            </div>
             {% endif %}
         </div>
-        <div>
-            <p class="text-xs uppercase text-neutral-500">Employee</p>
-            <p class="text-base font-semibold text-neutral-900">{{ payroll.employee.full_name|default:"-" }}</p>
+
+        <!-- Right Column -->
+        <div class="space-y-6">
+            <!-- Payroll Breakdown -->
+            <div class="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 bg-neutral-50 border-b border-neutral-200">
+                    <h3 class="text-lg font-semibold text-neutral-900">Payroll Breakdown</h3>
+                </div>
+                <div class="p-6 space-y-6">
+                    <!-- Earnings -->
+                    <div>
+                        <p class="text-xs uppercase tracking-wide text-neutral-500 mb-3">Earnings</p>
+                        <div class="flex items-center justify-between py-3 bg-green-50 rounded-lg px-4 border border-green-100">
+                            <p class="text-sm font-medium text-neutral-700">Gross Salary</p>
+                            <p class="text-lg font-semibold text-green-700 font-mono">Rp {{ payroll.gross_salary|floatformat:0|intcomma }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Deductions -->
+                    <div>
+                        <p class="text-xs uppercase tracking-wide text-neutral-500 mb-3">Deductions</p>
+                        <div class="space-y-2">
+                            {% if payroll.tax_deduction > 0 %}
+                            <div class="flex items-center justify-between py-2 px-4 bg-rose-50 rounded-lg border border-rose-100">
+                                <p class="text-sm text-neutral-700">Income Tax</p>
+                                <p class="text-sm font-medium text-rose-700 font-mono">- Rp {{ payroll.tax_deduction|floatformat:0|intcomma }}</p>
+                            </div>
+                            {% endif %}
+                            {% if payroll.insurance_deduction > 0 %}
+                            <div class="flex items-center justify-between py-2 px-4 bg-rose-50 rounded-lg border border-rose-100">
+                                <p class="text-sm text-neutral-700">Insurance (BPJS, etc.)</p>
+                                <p class="text-sm font-medium text-rose-700 font-mono">- Rp {{ payroll.insurance_deduction|floatformat:0|intcomma }}</p>
+                            </div>
+                            {% endif %}
+                            {% if payroll.other_deduction > 0 %}
+                            <div class="flex items-center justify-between py-2 px-4 bg-rose-50 rounded-lg border border-rose-100">
+                                <p class="text-sm text-neutral-700">Other Deductions</p>
+                                <p class="text-sm font-medium text-rose-700 font-mono">- Rp {{ payroll.other_deduction|floatformat:0|intcomma }}</p>
+                            </div>
+                            {% endif %}
+                            {% if payroll.tax_deduction == 0 and payroll.insurance_deduction == 0 and payroll.other_deduction == 0 %}
+                            <div class="py-3 px-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                                <p class="text-sm text-neutral-500 text-center">No deductions</p>
+                            </div>
+                            {% else %}
+                            {% with total_deductions=payroll.tax_deduction|add:payroll.insurance_deduction|add:payroll.other_deduction %}
+                            <div class="flex items-center justify-between py-3 px-4 bg-rose-100 rounded-lg border border-rose-200 mt-2">
+                                <p class="text-sm font-semibold text-neutral-900">Total Deductions</p>
+                                <p class="text-base font-bold text-rose-900 font-mono">- Rp {{ total_deductions|floatformat:0|intcomma }}</p>
+                            </div>
+                            {% endwith %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Net Pay -->
+                    <div class="pt-4 border-t-2 border-neutral-200">
+                        <div class="flex items-center justify-between py-4 px-5 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border-2 border-green-200">
+                            <p class="text-lg font-semibold text-neutral-900">Net Pay</p>
+                            <p class="text-3xl font-bold text-green-700 font-mono">Rp {{ payroll.net_pay|floatformat:0|intcomma }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status & Dates -->
+            <div class="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 bg-neutral-50 border-b border-neutral-200">
+                    <h3 class="text-lg font-semibold text-neutral-900">Status & Dates</h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Row 1 -->
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-neutral-500 mb-2">Status</p>
+                            {% if payroll.status == 'paid' %}
+                            <span class="inline-flex items-center bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-sm font-semibold">Paid</span>
+                            {% elif payroll.status == 'processing' %}
+                            <span class="inline-flex items-center bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-full text-sm font-semibold">Processing</span>
+                            {% elif payroll.status == 'draft' %}
+                            <span class="inline-flex items-center bg-neutral-100 text-neutral-700 px-3 py-1.5 rounded-full text-sm font-semibold">Draft</span>
+                            {% elif payroll.status == 'cancelled' %}
+                            <span class="inline-flex items-center bg-rose-100 text-rose-700 px-3 py-1.5 rounded-full text-sm font-semibold">Cancelled</span>
+                            {% else %}
+                            <span class="inline-flex items-center bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full text-sm font-semibold">Pending</span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-neutral-500 mb-2">Payroll Period</p>
+                            <p class="text-base font-medium text-neutral-900">{{ payroll.month|date:"F Y" }}</p>
+                        </div>
+                        <!-- Row 2 -->
+                        {% if payroll.payment_date %}
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-neutral-500 mb-2">Payment Date</p>
+                            <p class="text-base font-medium text-neutral-900">{{ payroll.payment_date|date:"F j, Y" }}</p>
+                        </div>
+                        {% else %}
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-neutral-500 mb-2">Payment Date</p>
+                            <p class="text-base font-medium text-neutral-400">-</p>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-neutral-500 mb-2">Created</p>
+                            <p class="text-base font-medium text-neutral-900">{{ payroll.created_at|date:"F j, Y" }}</p>
+                            <p class="text-xs text-neutral-500 mt-1">{{ payroll.created_at|date:"g:i A" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

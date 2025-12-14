@@ -20,32 +20,32 @@
                 {{ rfq.get_state_display }}
             </span>
         </div>
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-row items-center gap-2">
             {% if rfq.state == 'draft' %}
-            <a href="{% url 'rfq-update' rfq.pk %}" class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-lg text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">Edit</a>
-            <form method="post" action="{% url 'rfq-send' rfq.pk %}" class="inline">
+            <a href="{% url 'rfq-update' rfq.pk %}" class="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-lg text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">Edit</a>
+            <form method="post" action="{% url 'rfq-send' rfq.pk %}" class="inline-flex m-0 p-0">
                 {% csrf_token %}
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">Send to Vendor</button>
+                <button type="submit" class="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">Send to Vendor</button>
             </form>
             {% endif %}
             
             {% if rfq.state == 'sent' %}
-            <form method="post" action="{% url 'rfq-receive-quotation' rfq.pk %}" class="inline">
+            <form method="post" action="{% url 'rfq-receive-quotation' rfq.pk %}" class="inline-flex m-0 p-0">
                 {% csrf_token %}
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">Mark Quotation Received</button>
+                <button type="submit" class="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">Mark Quotation Received</button>
             </form>
             {% endif %}
             
             {% if rfq.state in 'sent,received' and not rfq.purchase_order %}
-            <button type="button" onclick="document.getElementById('convertModal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+            <button type="button" onclick="document.getElementById('convertModal').classList.remove('hidden')" class="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
                 Convert to PO
             </button>
             {% endif %}
             
             {% if rfq.state != 'done' and rfq.state != 'cancelled' %}
-            <form method="post" action="{% url 'rfq-cancel' rfq.pk %}" class="inline" onsubmit="return confirm('Are you sure?');">
+            <form method="post" action="{% url 'rfq-cancel' rfq.pk %}" class="inline-flex m-0 p-0" onsubmit="return confirm('Are you sure?');">
                 {% csrf_token %}
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">Cancel</button>
+                <button type="submit" class="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">Cancel</button>
             </form>
             {% endif %}
         </div>
@@ -126,11 +126,15 @@
                         </td>
                         {% if rfq.state == 'draft' %}
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <a href="{% url 'rfq-line-update' line.pk %}" class="text-blue-600 hover:text-blue-900">Edit</a>
+                            <div class="flex items-center justify-end gap-3">
+                                <a href="{% url 'rfq-line-update' line.pk %}" class="inline-flex items-center px-2 py-1 text-white bg-blue-600 blue-700 border border-blue-200 rounded-md transition-colors font-medium">
+                                    Edit
+                                </a>
                                 <form method="post" action="{% url 'rfq-line-delete' line.pk %}" class="inline" onsubmit="return confirm('Are you sure?');">
                                     {% csrf_token %}
-                                    <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                    <button type="submit" class="inline-flex items-center px-2 py-1 text-white bg-red-600 hover:text-white hover:bg-red-600 border border-red-200 rounded-md transition-colors font-medium">
+                                        Delete
+                                    </button>
                                 </form>
                             </div>
                         </td>

@@ -1,6 +1,8 @@
 from decimal import Decimal
 from django.utils import timezone
 from django.db import transaction
+from django.db.utils import IntegrityError
+import time
 
 from .models import (
     SalesQuotation, SalesQuotationLine,
@@ -9,6 +11,37 @@ from .models import (
 )
 from apps.inventory.models import StockPicking, StockPickingLine, Location
 from apps.inventory.services import StockService
+
+
+def generate_so_reference():
+    """
+    Generate unique SO reference in a thread-safe manner.
+    Uses database locking to prevent race conditions.
+    """
+    with transaction.atomic():
+        # Lock the last SO to prevent concurrent access
+        # select_for_update() locks the row until transaction commits
+        last_so = SalesOrder.objects.filter(
+            reference__startswith='SO-'
+        ).select_for_update().order_by('-reference').first()
+        
+        if last_so and last_so.reference:
+            try:
+                last_num = int(last_so.reference.split('-')[1])
+                new_reference = f'SO-{last_num + 1:05d}'
+            except (ValueError, IndexError):
+                new_reference = 'SO-00001'
+        else:
+            new_reference = 'SO-00001'
+        
+        # Double-check that reference doesn't exist
+        # (shouldn't happen with proper locking, but safety check)
+        if SalesOrder.objects.filter(reference=new_reference).exists():
+            # If somehow it exists, use timestamp as fallback
+            timestamp = int(time.time()) % 100000
+            new_reference = f'SO-{timestamp:05d}'
+        
+        return new_reference
 
 
 class SalesService:
@@ -21,14 +54,29 @@ class SalesService:
         if quotation.state != 'sent':
             raise ValueError("Only sent quotations can be converted to orders")
 
-        # Create Sales Order
-        sales_order = SalesOrder.objects.create(
-            customer=quotation.customer,
-            quotation=quotation,
-            discount_amount=quotation.discount_amount,
-            source_location=source_location,
-            notes=quotation.notes,
-        )
+        # Generate reference in thread-safe manner
+        reference = generate_so_reference()
+        
+        # Create Sales Order with explicit reference
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                sales_order = SalesOrder.objects.create(
+                    reference=reference,
+                    customer=quotation.customer,
+                    quotation=quotation,
+                    discount_amount=quotation.discount_amount,
+                    source_location=source_location,
+                    notes=quotation.notes,
+                )
+                break
+            except IntegrityError:
+                if attempt < max_retries - 1:
+                    # Reference was taken, generate new one
+                    reference = generate_so_reference()
+                    continue
+                else:
+                    raise
 
         # Copy lines
         for sq_line in quotation.lines.all():

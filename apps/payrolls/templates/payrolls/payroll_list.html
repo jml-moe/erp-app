@@ -6,16 +6,62 @@ My Payrolls
 {% endblock %}
 
 {% block dashboard_content %}
-<main class="max-w-5xl m-auto space-y-4">
+<main class="max-w-6xl m-auto space-y-4">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 class="text-xl font-bold text-neutral-900">Payrolls</h2>
         {% if user_settings.role == 'manager' %}
-        <a href="{% url 'payroll-create' %}"
-            class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
-            <span class="text-lg leading-none">+</span>
-            Create Payroll
-        </a>
+        <div class="flex gap-2">
+            <a href="{% url 'payroll-process' %}"
+                class="inline-flex items-center gap-2 bg-neutral-100 text-neutral-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-neutral-200">
+                Process Payrolls
+            </a>
+            <a href="{% url 'payroll-create' %}"
+                class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+                <span class="text-lg leading-none">+</span>
+                Create Payroll
+            </a>
+        </div>
         {% endif %}
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="bg-white rounded-xl border border-neutral-200 p-4">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-neutral-700 mb-1">Search</label>
+                <input type="text" name="search" value="{{ search_query }}" 
+                    placeholder="Employee name, ID..."
+                    class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            {% if user_settings.role == 'manager' %}
+            <div>
+                <label class="block text-xs font-medium text-neutral-700 mb-1">Employee</label>
+                <select name="employee" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Employees</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}" {% if employee_filter == emp.id|stringformat:"s" %}selected{% endif %}>{{ emp.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div>
+                <label class="block text-xs font-medium text-neutral-700 mb-1">Status</label>
+                <select name="status" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Status</option>
+                    {% for status_code, status_name in status_choices %}
+                    <option value="{{ status_code }}" {% if status_filter == status_code %}selected{% endif %}>{{ status_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="md:col-span-3 flex gap-2">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+                    Apply Filters
+                </button>
+                <a href="{% url 'payroll-list' %}" class="bg-neutral-100 text-neutral-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-neutral-200">
+                    Clear
+                </a>
+            </div>
+        </form>
     </div>
 
     {% if payrolls %}
@@ -24,15 +70,22 @@ My Payrolls
             <table class="min-w-full divide-y divide-neutral-200">
                 <thead class="bg-neutral-50">
                     <tr>
-                        {% if user_settings.role == 'manager' %}<th
-                            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                            Employee</th>{% endif %}
+                        {% if user_settings.role == 'manager' %}
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                            Month</th>
+                            Employee</th>
+                        {% endif %}
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                            Amount</th>
+                            Period</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                            Gross Salary</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                            Deductions</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                            Net Pay</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                             Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                            Payment Date</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
                             Action</th>
                     </tr>
@@ -41,21 +94,36 @@ My Payrolls
                     {% for p in payrolls %}
                     <tr class="hover:bg-neutral-50">
                         {% if user_settings.role == 'manager' %}
-                        <td class="px-6 py-4 text-sm text-neutral-900">{{ p.employee.full_name|default:"-" }}</td>
+                        <td class="px-6 py-4 text-sm text-neutral-900">
+                            {{ p.employee.full_name|default:"-" }}
+                            {% if p.employee.employee_number %}
+                            <p class="text-xs text-neutral-500 font-mono">{{ p.employee.employee_number }}</p>
+                            {% endif %}
+                        </td>
                         {% endif %}
                         <td class="px-6 py-4 text-sm text-neutral-900">{{ p.month|date:"F Y" }}</td>
-                        <td class="px-6 py-4 text-sm text-neutral-900">Rp {{ p.amount|floatformat:0|intcomma }}</td>
+                        <td class="px-6 py-4 text-sm text-neutral-900 text-right">Rp {{ p.gross_salary|floatformat:0|intcomma }}</td>
+                        <td class="px-6 py-4 text-sm text-neutral-600 text-right">
+                            {% with total_deductions=p.tax_deduction|add:p.insurance_deduction|add:p.other_deduction %}
+                            Rp {{ total_deductions|floatformat:0|intcomma }}
+                            {% endwith %}
+                        </td>
+                        <td class="px-6 py-4 text-sm font-semibold text-neutral-900 text-right">Rp {{ p.net_pay|floatformat:0|intcomma }}</td>
                         <td class="px-6 py-4 text-sm">
                             {% if p.status == 'paid' %}
-                            <span
-                                class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-semibold">Paid</span>
+                            <span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-semibold">Paid</span>
                             {% elif p.status == 'processing' %}
-                            <span
-                                class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold">Processing</span>
+                            <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold">Processing</span>
+                            {% elif p.status == 'draft' %}
+                            <span class="bg-neutral-100 text-neutral-700 px-2 py-1 rounded-full text-xs font-semibold">Draft</span>
+                            {% elif p.status == 'cancelled' %}
+                            <span class="bg-rose-100 text-rose-700 px-2 py-1 rounded-full text-xs font-semibold">Cancelled</span>
                             {% else %}
-                            <span
-                                class="bg-rose-100 text-rose-700 px-2 py-1 rounded-full text-xs font-semibold">Pending</span>
+                            <span class="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs font-semibold">Pending</span>
                             {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-neutral-500">
+                            {% if p.payment_date %}{{ p.payment_date|date:"M j, Y" }}{% else %}-{% endif %}
                         </td>
                         <td class="px-6 py-4 text-right text-sm">
                             <a href="{% url 'payroll-detail' p.pk %}"
@@ -71,6 +139,25 @@ My Payrolls
                 </tbody>
             </table>
         </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="bg-neutral-50 px-6 py-4 border-t border-neutral-200 flex items-center justify-between">
+            <div class="text-sm text-neutral-700">
+                Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} results
+            </div>
+            <div class="flex gap-2">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if employee_filter %}&employee={{ employee_filter }}{% endif %}"
+                    class="px-3 py-1 border border-neutral-300 rounded text-sm text-neutral-700 hover:bg-neutral-100">Previous</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if employee_filter %}&employee={{ employee_filter }}{% endif %}"
+                    class="px-3 py-1 border border-neutral-300 rounded text-sm text-neutral-700 hover:bg-neutral-100">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
     {% else %}
     <div class="bg-white p-12 rounded-lg border border-neutral-200 text-center">

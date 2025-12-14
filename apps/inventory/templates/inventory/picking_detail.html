@@ -93,46 +93,56 @@
     </div>
     
     <!-- Lines -->
-    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
-        <div class="flex justify-between items-center mb-4">
+    <div class="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-neutral-200 flex justify-between items-center bg-neutral-50">
             <h3 class="text-lg font-semibold text-neutral-800">Lines</h3>
             {% if picking.state == 'draft' %}
-            <a href="{% url 'picking-line-create' picking.pk %}" class="bg-blue-600 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1">
+            <a href="{% url 'picking-line-create' picking.pk %}" class="bg-blue-600 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"/></svg>
                 Add Line
             </a>
             {% endif %}
         </div>
-        
-        <table class="w-full">
-            <thead>
-                <tr class="border-b">
-                    <th class="p-2 text-left">Product</th>
-                    <th class="text-left w-24">UoM</th>
-                    <th class="text-right w-28">Demand</th>
-                    <th class="text-right w-28">Done</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for line in lines %}
-                <tr class="border-b last:border-0">
-                    <td class="p-2">
-                        <a href="{% url 'product-detail' line.product.pk %}" class="text-blue-600 hover:underline">{{ line.product.name }}</a>
-                        <p class="text-xs text-neutral-500">{{ line.product.internal_reference }}</p>
-                    </td>
-                    <td>{{ line.product.uom.symbol }}</td>
-                    <td class="text-right font-mono">{{ line.quantity|floatformat:2 }}</td>
-                    <td class="text-right font-mono {% if line.quantity_done >= line.quantity %}text-green-600{% endif %}">
-                        {{ line.quantity_done|floatformat:2 }}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="p-4 text-center text-neutral-500">No lines added yet.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200">
+                <thead class="bg-neutral-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">Product</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider w-24">UoM</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider w-32">Demand</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider w-32">Done</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-neutral-200">
+                    {% for line in lines %}
+                    <tr class="hover:bg-neutral-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <a href="{% url 'product-detail' line.product.pk %}" class="text-blue-600 hover:text-blue-700 hover:underline text-sm font-medium">{{ line.product.name }}</a>
+                                <span class="text-xs text-neutral-500 mt-0.5 font-mono">{{ line.product.internal_reference }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-neutral-600">{{ line.product.uom.symbol }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-neutral-900">{{ line.quantity|floatformat:2 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono {% if line.quantity_done >= line.quantity %}text-green-600 font-semibold{% else %}text-neutral-900{% endif %}">
+                            {{ line.quantity_done|floatformat:2 }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-12 text-center text-neutral-500">
+                            <div class="flex flex-col items-center justify-center">
+                                <svg class="w-12 h-12 text-neutral-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                </svg>
+                                <p class="text-sm">No lines added yet.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     
     <!-- Back -->

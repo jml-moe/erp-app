@@ -128,11 +128,15 @@
                         </td>
                         {% if quotation.state == 'draft' %}
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <a href="{% url 'quotation-line-update' line.pk %}" class="text-blue-600 hover:text-blue-900">Edit</a>
+                            <div class="flex items-center justify-end gap-3">
+                                <a href="{% url 'quotation-line-update' line.pk %}" class="inline-flex items-center px-2 py-1 text-white bg-blue-600 blue-700 border border-blue-200 rounded-md transition-colors font-medium">
+                                    Edit
+                                </a>
                                 <form method="post" action="{% url 'quotation-line-delete' line.pk %}" class="inline" onsubmit="return confirm('Are you sure?');">
                                     {% csrf_token %}
-                                    <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                    <button type="submit" class="inline-flex items-center px-2 py-1 text-white bg-red-600 hover:text-white hover:bg-red-600 border border-red-200 rounded-md transition-colors font-medium">
+                                        Delete
+                                    </button>
                                 </form>
                             </div>
                         </td>

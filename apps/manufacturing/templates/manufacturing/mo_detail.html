@@ -110,69 +110,88 @@
     {% endif %}
     
     <!-- Components -->
-    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
-        <div class="flex justify-between items-center mb-4">
+    <div class="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-neutral-200 flex justify-between items-center bg-neutral-50">
             <h3 class="text-lg font-semibold text-neutral-800">Components to Consume</h3>
             {% if mo.state == 'in_progress' %}
             <form method="post" action="{% url 'mo-consume' mo.pk %}" class="inline">
                 {% csrf_token %}
-                <button type="submit" class="bg-amber-500 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-amber-600">
+                <button type="submit" class="bg-amber-500 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-amber-600 transition-colors">
                     Consume All
                 </button>
             </form>
             {% endif %}
         </div>
         
-        <table class="w-full">
-            <thead>
-                <tr class="border-b">
-                    <th class="p-2 text-left">Component</th>
-                    <th class="text-left w-20">UoM</th>
-                    <th class="text-right w-28">Required</th>
-                    <th class="text-right w-28">Consumed</th>
-                    <th class="text-right w-28">Available</th>
-                    <th class="text-left w-24">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for line in lines %}
-                <tr class="border-b last:border-0">
-                    <td class="p-2">
-                        <a href="{% url 'product-detail' line.product.pk %}" class="text-green-600 hover:underline font-medium">{{ line.product.name }}</a>
-                    </td>
-                    <td>{{ line.uom.symbol|default:line.product.uom.symbol }}</td>
-                    <td class="text-right font-mono">{{ line.quantity_required|floatformat:2 }}</td>
-                    <td class="text-right font-mono {% if line.is_fully_consumed %}text-green-600{% else %}text-amber-600{% endif %}">
-                        {{ line.quantity_consumed|floatformat:2 }}
-                    </td>
-                    <td class="text-right font-mono">
-                        {% if availability %}
-                            {% for prod, info in availability.items %}
-                                {% if prod.pk == line.product.pk %}
-                                    <span class="{% if info.sufficient %}text-green-600{% else %}text-red-600{% endif %}">
-                                        {{ info.available|floatformat:2 }}
-                                    </span>
-                                {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if line.is_fully_consumed %}
-                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Consumed</span>
-                        {% else %}
-                        <span class="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">Pending</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="p-4 text-center text-neutral-500">No components defined.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200">
+                <thead class="bg-neutral-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">Component</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider w-24">UoM</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider w-32">Required</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider w-32">Consumed</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider w-32">Available</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider w-28">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-neutral-200">
+                    {% for line in lines %}
+                    <tr class="hover:bg-neutral-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="{% url 'product-detail' line.product.pk %}" class="text-green-600 hover:text-green-700 hover:underline font-medium">
+                                {{ line.product.name }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-neutral-600">
+                            {{ line.uom.symbol|default:line.product.uom.symbol }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-neutral-900">
+                            {{ line.quantity_required|floatformat:2 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono {% if line.is_fully_consumed %}text-green-600 font-semibold{% else %}text-amber-600{% endif %}">
+                            {{ line.quantity_consumed|floatformat:2 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono">
+                            {% if availability %}
+                                {% for prod, info in availability.items %}
+                                    {% if prod.pk == line.product.pk %}
+                                        <span class="{% if info.sufficient %}text-green-600 font-semibold{% else %}text-red-600 font-semibold{% endif %}">
+                                            {{ info.available|floatformat:2 }}
+                                        </span>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-neutral-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if line.is_fully_consumed %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Consumed
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                Pending
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-neutral-500">
+                            <div class="flex flex-col items-center justify-center">
+                                <svg class="w-12 h-12 text-neutral-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                </svg>
+                                <p class="text-sm">No components defined.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     
     <!-- Dates -->

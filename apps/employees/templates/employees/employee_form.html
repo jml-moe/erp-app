@@ -5,23 +5,185 @@
 {% endblock %}
 
 {% block dashboard_content %}
-<div class="max-w-2xl mx-auto">
+<div class="max-w-7xl mx-auto">
     <div class="bg-white rounded-xl border border-neutral-200 p-6">
-        <form method="post" class="space-y-4">
+        <form method="post" class="space-y-6">
             {% csrf_token %}
-            {% for field in form %}
-            <div class="space-y-1">
-                <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                <p class="text-xs text-neutral-500">{{ field.help_text }}</p>
-                {% endif %}
-                {% for error in field.errors %}
-                <p class="text-xs text-rose-600">{{ error }}</p>
-                {% endfor %}
+            
+            <!-- Account Section -->
+            {% comment %} <div class="space-y-4 pb-6 border-b border-neutral-200">
+                <h3 class="text-lg font-semibold text-neutral-900">Account</h3>
+                {% with field=form.actor %}
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <p class="text-xs text-neutral-500">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% for error in field.errors %}
+                    <p class="text-xs text-rose-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endwith %}
+            </div> {% endcomment %}
+
+            <!-- Personal Information -->
+            <div class="space-y-4 pb-6 border-b border-neutral-200">
+                <h3 class="text-lg font-semibold text-neutral-900">Personal Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% with field=form.full_name %}
+                    <div class="md:col-span-2 space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% with field=form.date_of_birth %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% with field=form.email %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% with field=form.phone %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                </div>
             </div>
-            {% endfor %}
-            <div class="pt-2 flex items-center justify-end gap-3">
+
+            <!-- Address -->
+            <div class="space-y-4 pb-6 border-b border-neutral-200">
+                <h3 class="text-lg font-semibold text-neutral-900">Address</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% with field=form.street %}
+                    <div class="md:col-span-2 space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% with field=form.city %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% with field=form.state %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% with field=form.zip_code %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% with field=form.country %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                </div>
+            </div>
+
+            <!-- Employment Information -->
+            <div class="space-y-4 pb-6 border-b border-neutral-200">
+                <h3 class="text-lg font-semibold text-neutral-900">Employment Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% with field=form.job_title %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% with field=form.department %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% with field=form.employment_type %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% with field=form.start_date %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% with field=form.end_date %}
+                    <div class="space-y-1">
+                        <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endwith %}
+                </div>
+            </div>
+
+            <!-- Compensation -->
+            <div class="space-y-4 pb-6 border-b border-neutral-200">
+                <h3 class="text-lg font-semibold text-neutral-900">Compensation</h3>
+                {% with field=form.salary %}
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                </div>
+                {% endwith %}
+            </div>
+
+            <!-- Status & Notes -->
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-neutral-900">Status & Notes</h3>
+                {% with field=form.is_active %}
+                <div class="flex items-center gap-3 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                    <input type="checkbox" 
+                           name="{{ field.name }}" 
+                           id="{{ field.id_for_label }}"
+                           {% if field.value %}checked{% endif %}
+                           class="h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                    <label for="{{ field.id_for_label }}" class="text-sm font-medium text-neutral-800 cursor-pointer flex-1">
+                        {{ field.label }}
+                    </label>
+                    {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                </div>
+                {% endwith %}
+                {% with field=form.notes %}
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-neutral-800">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<p class="text-xs text-rose-600">{{ error }}</p>{% endfor %}
+                </div>
+                {% endwith %}
+            </div>
+
+            <div class="pt-4 flex items-center justify-end gap-3 border-t border-neutral-200">
                 <a href="{% url 'employee-list' %}" class="text-neutral-600 text-sm font-medium">Cancel</a>
                 <button type="submit"
                     class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">Save</button>

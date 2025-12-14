@@ -1,5 +1,8 @@
 from django.db import models
+from django.db import transaction
+from django.db.utils import IntegrityError
 from decimal import Decimal
+import time
 
 from core.models import BaseModel
 from apps.products.models import Product
@@ -230,28 +233,59 @@ class StockMove(BaseModel):
     def save(self, *args, **kwargs):
         # Auto-generate reference
         if not self.reference:
-            last_move = StockMove.objects.filter(
-                reference__startswith='SM-'
-            ).order_by('-reference').first()
-            
-            if last_move and last_move.reference:
-                try:
-                    last_num = int(last_move.reference.split('-')[1])
-                    self.reference = f'SM-{last_num + 1:06d}'
-                except (ValueError, IndexError):
-                    self.reference = 'SM-000001'
-            else:
-                self.reference = 'SM-000001'
+            # Use thread-safe reference generation
+            max_retries = 10
+            for attempt in range(max_retries):
+                with transaction.atomic():
+                    # Lock the last SM to prevent concurrent access
+                    last_move = StockMove.objects.filter(
+                        reference__startswith='SM-'
+                    ).select_for_update().order_by('-reference').first()
+                    
+                    if last_move and last_move.reference:
+                        try:
+                            last_num = int(last_move.reference.split('-')[1])
+                            self.reference = f'SM-{last_num + 1:06d}'
+                        except (ValueError, IndexError):
+                            self.reference = 'SM-000001'
+                    else:
+                        self.reference = 'SM-000001'
+                    
+                    # Check if reference already exists
+                    if not StockMove.objects.filter(reference=self.reference).exists():
+                        break
+                
+                # If reference exists, retry with new number
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    # Last resort: use timestamp
+                    timestamp = int(time.time()) % 1000000
+                    self.reference = f'SM-{timestamp:06d}'
         
         # Determine move type
-        if self.location_src.location_type == 'supplier':
+        if self.location_src and self.location_src.location_type == 'supplier':
             self.move_type = 'incoming'
-        elif self.location_dest.location_type == 'customer':
+        elif self.location_dest and self.location_dest.location_type == 'customer':
             self.move_type = 'outgoing'
         else:
             self.move_type = 'internal'
         
-        super().save(*args, **kwargs)
+        # Try to save, retry if IntegrityError occurs
+        max_save_retries = 3
+        for attempt in range(max_save_retries):
+            try:
+                super().save(*args, **kwargs)
+                break
+            except IntegrityError as e:
+                if 'reference' in str(e) and attempt < max_save_retries - 1:
+                    # Reference conflict, generate new one
+                    if not self.reference or self.reference.startswith('SM-'):
+                        timestamp = int(time.time()) % 1000000
+                        self.reference = f'SM-{timestamp:06d}'
+                    continue
+                else:
+                    raise
 
 
 class StockPicking(BaseModel):
@@ -326,20 +360,56 @@ class StockPicking(BaseModel):
                 'internal': 'INT'
             }.get(self.picking_type, 'PICK')
             
-            last_picking = StockPicking.objects.filter(
-                reference__startswith=f'{prefix}-'
-            ).order_by('-reference').first()
-            
-            if last_picking and last_picking.reference:
-                try:
-                    last_num = int(last_picking.reference.split('-')[1])
-                    self.reference = f'{prefix}-{last_num + 1:05d}'
-                except (ValueError, IndexError):
-                    self.reference = f'{prefix}-00001'
-            else:
-                self.reference = f'{prefix}-00001'
+            # Use thread-safe reference generation
+            max_retries = 10
+            for attempt in range(max_retries):
+                with transaction.atomic():
+                    # Lock the last picking to prevent concurrent access
+                    last_picking = StockPicking.objects.filter(
+                        reference__startswith=f'{prefix}-'
+                    ).select_for_update().order_by('-reference').first()
+                    
+                    if last_picking and last_picking.reference:
+                        try:
+                            last_num = int(last_picking.reference.split('-')[1])
+                            self.reference = f'{prefix}-{last_num + 1:05d}'
+                        except (ValueError, IndexError):
+                            self.reference = f'{prefix}-00001'
+                    else:
+                        self.reference = f'{prefix}-00001'
+                    
+                    # Check if reference already exists
+                    if not StockPicking.objects.filter(reference=self.reference).exists():
+                        break
+                
+                # If reference exists, retry with new number
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    # Last resort: use timestamp
+                    timestamp = int(time.time()) % 100000
+                    self.reference = f'{prefix}-{timestamp:05d}'
         
-        super().save(*args, **kwargs)
+        # Try to save, retry if IntegrityError occurs
+        max_save_retries = 3
+        for attempt in range(max_save_retries):
+            try:
+                super().save(*args, **kwargs)
+                break
+            except IntegrityError as e:
+                if 'reference' in str(e) and attempt < max_save_retries - 1:
+                    # Reference conflict, generate new one
+                    prefix = {
+                        'incoming': 'IN',
+                        'outgoing': 'OUT',
+                        'internal': 'INT'
+                    }.get(self.picking_type, 'PICK')
+                    if not self.reference or self.reference.startswith(f'{prefix}-'):
+                        timestamp = int(time.time()) % 100000
+                        self.reference = f'{prefix}-{timestamp:05d}'
+                    continue
+                else:
+                    raise
 
 
 class StockPickingLine(BaseModel):
@@ -435,20 +505,51 @@ class StockAdjustment(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.reference:
-            last_adj = StockAdjustment.objects.filter(
-                reference__startswith='ADJ-'
-            ).order_by('-reference').first()
-            
-            if last_adj and last_adj.reference:
-                try:
-                    last_num = int(last_adj.reference.split('-')[1])
-                    self.reference = f'ADJ-{last_num + 1:05d}'
-                except (ValueError, IndexError):
-                    self.reference = 'ADJ-00001'
-            else:
-                self.reference = 'ADJ-00001'
+            # Use thread-safe reference generation
+            max_retries = 10
+            for attempt in range(max_retries):
+                with transaction.atomic():
+                    # Lock the last ADJ to prevent concurrent access
+                    last_adj = StockAdjustment.objects.filter(
+                        reference__startswith='ADJ-'
+                    ).select_for_update().order_by('-reference').first()
+                    
+                    if last_adj and last_adj.reference:
+                        try:
+                            last_num = int(last_adj.reference.split('-')[1])
+                            self.reference = f'ADJ-{last_num + 1:05d}'
+                        except (ValueError, IndexError):
+                            self.reference = 'ADJ-00001'
+                    else:
+                        self.reference = 'ADJ-00001'
+                    
+                    # Check if reference already exists
+                    if not StockAdjustment.objects.filter(reference=self.reference).exists():
+                        break
+                
+                # If reference exists, retry with new number
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    # Last resort: use timestamp
+                    timestamp = int(time.time()) % 100000
+                    self.reference = f'ADJ-{timestamp:05d}'
         
-        super().save(*args, **kwargs)
+        # Try to save, retry if IntegrityError occurs
+        max_save_retries = 3
+        for attempt in range(max_save_retries):
+            try:
+                super().save(*args, **kwargs)
+                break
+            except IntegrityError as e:
+                if 'reference' in str(e) and attempt < max_save_retries - 1:
+                    # Reference conflict, generate new one
+                    if not self.reference or self.reference.startswith('ADJ-'):
+                        timestamp = int(time.time()) % 100000
+                        self.reference = f'ADJ-{timestamp:05d}'
+                    continue
+                else:
+                    raise
 
 
 class StockAdjustmentLine(BaseModel):

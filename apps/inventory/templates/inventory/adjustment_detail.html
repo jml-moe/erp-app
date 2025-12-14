@@ -45,37 +45,49 @@
     </div>
     
     <!-- Lines -->
-    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
-        <h3 class="text-lg font-semibold mb-4 text-neutral-800">Adjustment Lines</h3>
-        
-        <table class="w-full">
-            <thead>
-                <tr class="border-b">
-                    <th class="p-2 text-left">Product</th>
-                    <th class="text-left w-20">UoM</th>
-                    <th class="text-right w-28">System Qty</th>
-                    <th class="text-right w-28">Counted Qty</th>
-                    <th class="text-right w-28">Difference</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for line in lines %}
-                <tr class="border-b last:border-0">
-                    <td class="p-2">{{ line.product.name }}</td>
-                    <td>{{ line.product.uom.symbol }}</td>
-                    <td class="text-right font-mono">{{ line.theoretical_qty|floatformat:2 }}</td>
-                    <td class="text-right font-mono">{{ line.counted_qty|floatformat:2 }}</td>
-                    <td class="text-right font-mono {% if line.difference < 0 %}text-red-600{% elif line.difference > 0 %}text-green-600{% endif %}">
-                        {% if line.difference > 0 %}+{% endif %}{{ line.difference|floatformat:2 }}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="p-4 text-center text-neutral-500">No adjustment lines.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50">
+            <h3 class="text-lg font-semibold text-neutral-800">Adjustment Lines</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200">
+                <thead class="bg-neutral-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">Product</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider w-24">UoM</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider w-32">System Qty</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider w-32">Counted Qty</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider w-32">Difference</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-neutral-200">
+                    {% for line in lines %}
+                    <tr class="hover:bg-neutral-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-neutral-900">{{ line.product.name }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-neutral-600">{{ line.product.uom.symbol }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-neutral-900">{{ line.theoretical_qty|floatformat:2 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-neutral-900">{{ line.counted_qty|floatformat:2 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-semibold {% if line.difference < 0 %}text-red-600{% elif line.difference > 0 %}text-green-600{% else %}text-neutral-600{% endif %}">
+                            {% if line.difference > 0 %}+{% endif %}{{ line.difference|floatformat:2 }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-neutral-500">
+                            <div class="flex flex-col items-center justify-center">
+                                <svg class="w-12 h-12 text-neutral-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                </svg>
+                                <p class="text-sm">No adjustment lines.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     
     <!-- Back -->

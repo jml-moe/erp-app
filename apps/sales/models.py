@@ -1,6 +1,9 @@
 from django.db import models
+from django.db import transaction
+from django.db.utils import IntegrityError
 from decimal import Decimal
 from django.utils import timezone
+import time
 
 from core.models import BaseModel
 from apps.products.models import Product
@@ -168,20 +171,51 @@ class SalesQuotation(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.reference:
-            last_sq = SalesQuotation.objects.filter(
-                reference__startswith='SQ-'
-            ).order_by('-reference').first()
-            
-            if last_sq and last_sq.reference:
-                try:
-                    last_num = int(last_sq.reference.split('-')[1])
-                    self.reference = f'SQ-{last_num + 1:05d}'
-                except (ValueError, IndexError):
-                    self.reference = 'SQ-00001'
-            else:
-                self.reference = 'SQ-00001'
+            # Use thread-safe reference generation
+            max_retries = 10
+            for attempt in range(max_retries):
+                with transaction.atomic():
+                    # Lock the last SQ to prevent concurrent access
+                    last_sq = SalesQuotation.objects.filter(
+                        reference__startswith='SQ-'
+                    ).select_for_update().order_by('-reference').first()
+                    
+                    if last_sq and last_sq.reference:
+                        try:
+                            last_num = int(last_sq.reference.split('-')[1])
+                            self.reference = f'SQ-{last_num + 1:05d}'
+                        except (ValueError, IndexError):
+                            self.reference = 'SQ-00001'
+                    else:
+                        self.reference = 'SQ-00001'
+                    
+                    # Check if reference already exists
+                    if not SalesQuotation.objects.filter(reference=self.reference).exists():
+                        break
+                
+                # If reference exists, retry with new number
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    # Last resort: use timestamp
+                    timestamp = int(time.time()) % 100000
+                    self.reference = f'SQ-{timestamp:05d}'
         
-        super().save(*args, **kwargs)
+        # Try to save, retry if IntegrityError occurs
+        max_save_retries = 3
+        for attempt in range(max_save_retries):
+            try:
+                super().save(*args, **kwargs)
+                break
+            except IntegrityError as e:
+                if 'reference' in str(e) and attempt < max_save_retries - 1:
+                    # Reference conflict, generate new one
+                    if not self.reference or self.reference.startswith('SQ-'):
+                        timestamp = int(time.time()) % 100000
+                        self.reference = f'SQ-{timestamp:05d}'
+                    continue
+                else:
+                    raise
 
     def compute_totals(self):
         """Compute total amounts from lines"""
@@ -334,20 +368,51 @@ class SalesOrder(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.reference:
-            last_so = SalesOrder.objects.filter(
-                reference__startswith='SO-'
-            ).order_by('-reference').first()
-            
-            if last_so and last_so.reference:
-                try:
-                    last_num = int(last_so.reference.split('-')[1])
-                    self.reference = f'SO-{last_num + 1:05d}'
-                except (ValueError, IndexError):
-                    self.reference = 'SO-00001'
-            else:
-                self.reference = 'SO-00001'
+            # Use thread-safe reference generation
+            max_retries = 10
+            for attempt in range(max_retries):
+                with transaction.atomic():
+                    # Lock the last SO to prevent concurrent access
+                    last_so = SalesOrder.objects.filter(
+                        reference__startswith='SO-'
+                    ).select_for_update().order_by('-reference').first()
+                    
+                    if last_so and last_so.reference:
+                        try:
+                            last_num = int(last_so.reference.split('-')[1])
+                            self.reference = f'SO-{last_num + 1:05d}'
+                        except (ValueError, IndexError):
+                            self.reference = 'SO-00001'
+                    else:
+                        self.reference = 'SO-00001'
+                    
+                    # Check if reference already exists
+                    if not SalesOrder.objects.filter(reference=self.reference).exists():
+                        break
+                
+                # If reference exists, retry with new number
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    # Last resort: use timestamp
+                    timestamp = int(time.time()) % 100000
+                    self.reference = f'SO-{timestamp:05d}'
         
-        super().save(*args, **kwargs)
+        # Try to save, retry if IntegrityError occurs
+        max_save_retries = 3
+        for attempt in range(max_save_retries):
+            try:
+                super().save(*args, **kwargs)
+                break
+            except IntegrityError as e:
+                if 'reference' in str(e) and attempt < max_save_retries - 1:
+                    # Reference conflict, generate new one
+                    if not self.reference or self.reference.startswith('SO-'):
+                        timestamp = int(time.time()) % 100000
+                        self.reference = f'SO-{timestamp:05d}'
+                    continue
+                else:
+                    raise
 
     def compute_totals(self):
         """Compute total amounts from lines"""
@@ -519,23 +584,54 @@ class SalesInvoice(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.reference:
-            last_inv = SalesInvoice.objects.filter(
-                reference__startswith='INV-'
-            ).order_by('-reference').first()
-            
-            if last_inv and last_inv.reference:
-                try:
-                    last_num = int(last_inv.reference.split('-')[1])
-                    self.reference = f'INV-{last_num + 1:05d}'
-                except (ValueError, IndexError):
-                    self.reference = 'INV-00001'
-            else:
-                self.reference = 'INV-00001'
+            # Use thread-safe reference generation
+            max_retries = 10
+            for attempt in range(max_retries):
+                with transaction.atomic():
+                    # Lock the last INV to prevent concurrent access
+                    last_inv = SalesInvoice.objects.filter(
+                        reference__startswith='INV-'
+                    ).select_for_update().order_by('-reference').first()
+                    
+                    if last_inv and last_inv.reference:
+                        try:
+                            last_num = int(last_inv.reference.split('-')[1])
+                            self.reference = f'INV-{last_num + 1:05d}'
+                        except (ValueError, IndexError):
+                            self.reference = 'INV-00001'
+                    else:
+                        self.reference = 'INV-00001'
+                    
+                    # Check if reference already exists
+                    if not SalesInvoice.objects.filter(reference=self.reference).exists():
+                        break
+                
+                # If reference exists, retry with new number
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    # Last resort: use timestamp
+                    timestamp = int(time.time()) % 100000
+                    self.reference = f'INV-{timestamp:05d}'
         
         # Calculate amount due
         self.amount_due = self.total_amount - self.amount_paid
         
-        super().save(*args, **kwargs)
+        # Try to save, retry if IntegrityError occurs
+        max_save_retries = 3
+        for attempt in range(max_save_retries):
+            try:
+                super().save(*args, **kwargs)
+                break
+            except IntegrityError as e:
+                if 'reference' in str(e) and attempt < max_save_retries - 1:
+                    # Reference conflict, generate new one
+                    if not self.reference or self.reference.startswith('INV-'):
+                        timestamp = int(time.time()) % 100000
+                        self.reference = f'INV-{timestamp:05d}'
+                    continue
+                else:
+                    raise
 
     def compute_totals(self):
         """Compute total amounts from lines"""

@@ -96,100 +96,126 @@ Vendor: {{ vendor.name }}
     </div>
     
     <!-- Contacts -->
-    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
-        <div class="flex justify-between items-center mb-4">
+    <div class="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-neutral-200 flex justify-between items-center bg-neutral-50">
             <h3 class="text-lg font-semibold text-neutral-800">Contacts</h3>
-            <a href="{% url 'vendor-contact-create' vendor.pk %}" class="bg-blue-600 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1">
+            <a href="{% url 'vendor-contact-create' vendor.pk %}" class="bg-blue-600 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"/></svg>
                 Add Contact
             </a>
         </div>
-        
         {% if contacts %}
-        <table class="w-full">
-            <thead>
-                <tr class="border-b">
-                    <th class="p-2 text-left">Name</th>
-                    <th class="text-left">Title</th>
-                    <th class="text-left">Email</th>
-                    <th class="text-left">Phone</th>
-                    <th class="text-left w-24">Primary</th>
-                    <th class="text-left w-32">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for contact in contacts %}
-                <tr class="border-b last:border-0">
-                    <td class="p-2 font-medium">{{ contact.name }}</td>
-                    <td>{{ contact.title|default:"-" }}</td>
-                    <td>{{ contact.email|default:"-" }}</td>
-                    <td>{{ contact.phone|default:contact.mobile|default:"-" }}</td>
-                    <td>
-                        {% if contact.is_primary %}
-                        <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Primary</span>
-                        {% endif %}
-                    </td>
-                    <td class="flex gap-2 p-2">
-                        <a href="{% url 'vendor-contact-update' contact.pk %}" class="text-amber-600 hover:underline text-sm">Edit</a>
-                        <a href="{% url 'vendor-contact-delete' contact.pk %}" class="text-red-600 hover:underline text-sm">Delete</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200">
+                <thead class="bg-neutral-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">Name</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">Title</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">Email</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">Phone</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider w-24">Primary</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider w-32">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-neutral-200">
+                    {% for contact in contacts %}
+                    <tr class="hover:bg-neutral-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-neutral-900">{{ contact.name }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{{ contact.title|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{{ contact.email|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">{{ contact.phone|default:contact.mobile|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if contact.is_primary %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Primary</span>
+                            {% else %}
+                            <span class="text-neutral-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-3">
+                                <a href="{% url 'vendor-contact-update' contact.pk %}" class="text-amber-600 hover:text-amber-700 hover:underline text-sm font-medium">Edit</a>
+                                <a href="{% url 'vendor-contact-delete' contact.pk %}" class="text-red-600 hover:text-red-700 hover:underline text-sm font-medium">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
-        <p class="text-neutral-500 text-center py-4">No contacts added yet.</p>
+        <div class="px-6 py-12 text-center text-neutral-500">
+            <div class="flex flex-col items-center justify-center">
+                <svg class="w-12 h-12 text-neutral-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <p class="text-sm">No contacts added yet.</p>
+            </div>
+        </div>
         {% endif %}
     </div>
     
     <!-- Products -->
-    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
-        <div class="flex justify-between items-center mb-4">
+    <div class="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-neutral-200 flex justify-between items-center bg-neutral-50">
             <h3 class="text-lg font-semibold text-neutral-800">Products</h3>
-            <a href="{% url 'vendor-product-create' vendor.pk %}" class="bg-blue-600 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1">
+            <a href="{% url 'vendor-product-create' vendor.pk %}" class="bg-blue-600 text-white py-1.5 px-3 text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"/></svg>
                 Add Product
             </a>
         </div>
-        
         {% if vendor_products %}
-        <table class="w-full">
-            <thead>
-                <tr class="border-b">
-                    <th class="p-2 text-left">Product</th>
-                    <th class="text-left">Vendor Code</th>
-                    <th class="text-left">Price</th>
-                    <th class="text-left">Min Qty</th>
-                    <th class="text-left">Lead Time</th>
-                    <th class="text-left w-24">Preferred</th>
-                    <th class="text-left w-32">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for vp in vendor_products %}
-                <tr class="border-b last:border-0">
-                    <td class="p-2">
-                        <a href="{% url 'product-detail' vp.product.pk %}" class="text-blue-600 hover:underline font-medium">{{ vp.product.name }}</a>
-                    </td>
-                    <td class="font-mono text-sm">{{ vp.vendor_product_code|default:"-" }}</td>
-                    <td>{{ vp.currency }} {{ vp.price|floatformat:0 }}</td>
-                    <td>{{ vp.min_qty }} {{ vp.product.uom.symbol }}</td>
-                    <td>{{ vp.lead_time_days }} days</td>
-                    <td>
-                        {% if vp.is_preferred %}
-                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Preferred</span>
-                        {% endif %}
-                    </td>
-                    <td class="flex gap-2 p-2">
-                        <a href="{% url 'vendor-product-update' vp.pk %}" class="text-amber-600 hover:underline text-sm">Edit</a>
-                        <a href="{% url 'vendor-product-delete' vp.pk %}" class="text-red-600 hover:underline text-sm">Delete</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-neutral-200">
+                <thead class="bg-neutral-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">Product</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">Vendor Code</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider">Price</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider">Min Qty</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider">Lead Time</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-neutral-700 uppercase tracking-wider w-24">Preferred</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider w-32">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-neutral-200">
+                    {% for vp in vendor_products %}
+                    <tr class="hover:bg-neutral-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="{% url 'product-detail' vp.product.pk %}" class="text-blue-600 hover:text-blue-700 hover:underline text-sm font-medium">{{ vp.product.name }}</a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-600">{{ vp.vendor_product_code|default:"-" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-neutral-900">{{ vp.currency }} {{ vp.price|floatformat:0 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-neutral-600">{{ vp.min_qty }} {{ vp.product.uom.symbol }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-neutral-600">{{ vp.lead_time_days }} days</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if vp.is_preferred %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Preferred</span>
+                            {% else %}
+                            <span class="text-neutral-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-3">
+                                <a href="{% url 'vendor-product-update' vp.pk %}" class="text-amber-600 hover:text-amber-700 hover:underline text-sm font-medium">Edit</a>
+                                <a href="{% url 'vendor-product-delete' vp.pk %}" class="text-red-600 hover:text-red-700 hover:underline text-sm font-medium">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
-        <p class="text-neutral-500 text-center py-4">No products added yet.</p>
+        <div class="px-6 py-12 text-center text-neutral-500">
+            <div class="flex flex-col items-center justify-center">
+                <svg class="w-12 h-12 text-neutral-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+                <p class="text-sm">No products added yet.</p>
+            </div>
+        </div>
         {% endif %}
     </div>
     

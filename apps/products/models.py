@@ -1,5 +1,8 @@
 from django.db import models
+from django.db import transaction
+from django.db.utils import IntegrityError
 from decimal import Decimal
+import time
 
 from core.models import BaseModel
 
@@ -177,21 +180,51 @@ class Product(BaseModel):
     def save(self, *args, **kwargs):
         # Auto-generate internal reference if not provided
         if not self.internal_reference:
-            # Get the last product with auto-generated reference
-            last_product = Product.objects.filter(
-                internal_reference__startswith='PROD-'
-            ).order_by('-internal_reference').first()
-            
-            if last_product and last_product.internal_reference:
-                try:
-                    last_num = int(last_product.internal_reference.split('-')[1])
-                    self.internal_reference = f'PROD-{last_num + 1:05d}'
-                except (ValueError, IndexError):
-                    self.internal_reference = 'PROD-00001'
-            else:
-                self.internal_reference = 'PROD-00001'
+            # Use thread-safe reference generation
+            max_retries = 10
+            for attempt in range(max_retries):
+                with transaction.atomic():
+                    # Lock the last product to prevent concurrent access
+                    last_product = Product.objects.filter(
+                        internal_reference__startswith='PROD-'
+                    ).select_for_update().order_by('-internal_reference').first()
+                    
+                    if last_product and last_product.internal_reference:
+                        try:
+                            last_num = int(last_product.internal_reference.split('-')[1])
+                            self.internal_reference = f'PROD-{last_num + 1:05d}'
+                        except (ValueError, IndexError):
+                            self.internal_reference = 'PROD-00001'
+                    else:
+                        self.internal_reference = 'PROD-00001'
+                    
+                    # Check if reference already exists
+                    if not Product.objects.filter(internal_reference=self.internal_reference).exists():
+                        break
+                
+                # If reference exists, retry with new number
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    # Last resort: use timestamp
+                    timestamp = int(time.time()) % 100000
+                    self.internal_reference = f'PROD-{timestamp:05d}'
         
-        super().save(*args, **kwargs)
+        # Try to save, retry if IntegrityError occurs
+        max_save_retries = 3
+        for attempt in range(max_save_retries):
+            try:
+                super().save(*args, **kwargs)
+                break
+            except IntegrityError as e:
+                if 'internal_reference' in str(e) and attempt < max_save_retries - 1:
+                    # Reference conflict, generate new one
+                    if not self.internal_reference or self.internal_reference.startswith('PROD-'):
+                        timestamp = int(time.time()) % 100000
+                        self.internal_reference = f'PROD-{timestamp:05d}'
+                    continue
+                else:
+                    raise
 
     @property
     def display_uom(self):

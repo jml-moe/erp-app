@@ -3,11 +3,44 @@ Purchasing business logic services
 """
 from decimal import Decimal
 from django.db import transaction
+from django.db.utils import IntegrityError
 from django.utils import timezone
+import time
 
 from .models import RequestForQuotation, RFQLine, PurchaseOrder, POLine
 from apps.inventory.models import Location, StockPicking, StockPickingLine
 from apps.inventory.services import StockService
+
+
+def generate_po_reference():
+    """
+    Generate unique PO reference in a thread-safe manner.
+    Uses database locking to prevent race conditions.
+    """
+    with transaction.atomic():
+        # Lock the last PO to prevent concurrent access
+        # select_for_update() locks the row until transaction commits
+        last_po = PurchaseOrder.objects.filter(
+            reference__startswith='PO-'
+        ).select_for_update().order_by('-reference').first()
+        
+        if last_po and last_po.reference:
+            try:
+                last_num = int(last_po.reference.split('-')[1])
+                new_reference = f'PO-{last_num + 1:05d}'
+            except (ValueError, IndexError):
+                new_reference = 'PO-00001'
+        else:
+            new_reference = 'PO-00001'
+        
+        # Double-check that reference doesn't exist
+        # (shouldn't happen with proper locking, but safety check)
+        if PurchaseOrder.objects.filter(reference=new_reference).exists():
+            # If somehow it exists, use timestamp as fallback
+            timestamp = int(time.time()) % 100000
+            new_reference = f'PO-{timestamp:05d}'
+        
+        return new_reference
 
 
 class RFQService:
@@ -43,14 +76,29 @@ class RFQService:
         if rfq.purchase_order:
             raise ValueError("RFQ already has a Purchase Order")
         
-        # Create PO
-        po = PurchaseOrder.objects.create(
-            vendor=rfq.vendor,
-            delivery_location=delivery_location,
-            expected_date=rfq.deadline,
-            notes=rfq.notes,
-            actor=user
-        )
+        # Generate reference in thread-safe manner
+        reference = generate_po_reference()
+        
+        # Create PO with explicit reference
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                po = PurchaseOrder.objects.create(
+                    reference=reference,
+                    vendor=rfq.vendor,
+                    delivery_location=delivery_location,
+                    expected_date=rfq.deadline,
+                    notes=rfq.notes,
+                    actor=user
+                )
+                break
+            except IntegrityError:
+                if attempt < max_retries - 1:
+                    # Reference was taken, generate new one
+                    reference = generate_po_reference()
+                    continue
+                else:
+                    raise
         
         # Copy lines
         for rfq_line in rfq.lines.all():
@@ -172,10 +220,18 @@ class POService:
         if not po.delivery_location:
             raise ValueError("PO must have a delivery location")
         
-        # Get supplier location
+        # Get supplier location (or create one)
         supplier_location = Location.objects.filter(
             location_type='supplier'
         ).first()
+        
+        if not supplier_location:
+            supplier_location = Location.objects.create(
+                name='Suppliers',
+                code='SUPPLIERS',
+                location_type='supplier',
+                actor=user
+            )
         
         fully_received = True
         

@@ -1,6 +1,7 @@
 from decimal import Decimal
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
 import random
@@ -17,36 +18,40 @@ from apps.manufacturing.models import BillOfMaterials, BOMLine, ManufacturingOrd
 
 
 class Command(BaseCommand):
-    help = 'Seed database with dummy data for cafe ERP'
+    help = 'Seed database with Coffee O ERP data based on PPT (Fixed Materials)'
 
+    @transaction.atomic
     def handle(self, *args, **options):
-        self.stdout.write('🌱 Seeding database with dummy data...\n')
+        self.stdout.write('🌱 Seeding database with Coffee O data...\n')
         
-        self.create_uom()
-        self.create_categories()
-        self.create_products()
-        self.create_vendors()
-        self.create_warehouses()
-        self.create_stock()
-        self.create_customers()
-        self.create_bom()
-        self.create_rfq_and_po()
-        self.create_quotations_and_orders()
-        
-        self.stdout.write(self.style.SUCCESS('\n✅ Database seeded successfully!'))
+        try:
+            self.create_uom()
+            self.create_categories()
+            self.create_products()
+            self.create_vendors()
+            self.create_warehouses()
+            self.create_stock()
+            self.create_customers()
+            self.create_bom()
+            self.create_rfq_and_po()
+            self.create_quotations_and_orders()
+            
+            self.stdout.write(self.style.SUCCESS('\n✅ Database seeded successfully with Fixed Coffee O data!'))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'\n❌ Error seeding database: {str(e)}'))
+            raise CommandError(f'Seeding failed: {str(e)}')
 
     def create_uom(self):
         self.stdout.write('  Creating Units of Measure...')
         
         uoms_data = [
-            {'name': 'Piece', 'symbol': 'pcs', 'category': 'unit', 'is_base_unit': True},
-            {'name': 'Kilogram', 'symbol': 'kg', 'category': 'weight', 'is_base_unit': True},
+            {'name': 'Piece', 'symbol': 'pcs', 'category': 'unit', 'is_base_unit': True, 'ratio': Decimal('1.000000')},
+            {'name': 'Kilogram', 'symbol': 'kg', 'category': 'weight', 'is_base_unit': True, 'ratio': Decimal('1.000000')},
             {'name': 'Gram', 'symbol': 'g', 'category': 'weight', 'ratio': Decimal('0.001')},
-            {'name': 'Liter', 'symbol': 'L', 'category': 'volume', 'is_base_unit': True},
+            {'name': 'Liter', 'symbol': 'L', 'category': 'volume', 'is_base_unit': True, 'ratio': Decimal('1.000000')},
             {'name': 'Milliliter', 'symbol': 'ml', 'category': 'volume', 'ratio': Decimal('0.001')},
-            {'name': 'Cup', 'symbol': 'cup', 'category': 'unit'},
-            {'name': 'Pack', 'symbol': 'pack', 'category': 'unit'},
-            {'name': 'Box', 'symbol': 'box', 'category': 'unit'},
+            {'name': 'Centimeter', 'symbol': 'cm', 'category': 'length', 'is_base_unit': True, 'ratio': Decimal('1.000000')}, # Added for Tape
+            {'name': 'Pack', 'symbol': 'pack', 'category': 'unit', 'ratio': Decimal('1.000000')},
         ]
         
         self.uoms = {}
@@ -63,10 +68,9 @@ class Command(BaseCommand):
         self.stdout.write('  Creating Categories...')
         
         categories_data = [
-            {'name': 'Beverages', 'description': 'Coffee, tea, and other drinks'},
-            {'name': 'Food', 'description': 'Pastries, cakes, and snacks'},
-            {'name': 'Raw Materials', 'description': 'Ingredients for production'},
-            {'name': 'Packaging', 'description': 'Cups, lids, bags, etc.'},
+            {'name': 'Coffee O Products', 'description': 'Finished Goods from Menu'},
+            {'name': 'Raw Materials', 'description': 'Main Ingredients'},
+            {'name': 'Packaging & Consumables', 'description': 'Cups, Lids, Stickers, Tissues, etc.'},
         ]
         
         self.categories = {}
@@ -77,121 +81,122 @@ class Command(BaseCommand):
             )
             self.categories[data['name']] = cat
         
-        # Sub-categories
-        sub_categories = [
-            {'name': 'Coffee', 'parent': 'Beverages'},
-            {'name': 'Non-Coffee', 'parent': 'Beverages'},
-            {'name': 'Pastry', 'parent': 'Food'},
-            {'name': 'Cake', 'parent': 'Food'},
-        ]
-        
-        for data in sub_categories:
-            parent = self.categories.get(data['parent'])
-            cat, created = Category.objects.get_or_create(
-                name=data['name'],
-                defaults={'parent': parent}
-            )
-            self.categories[data['name']] = cat
-        
         self.stdout.write(self.style.SUCCESS(f'    ✓ {len(self.categories)} Categories'))
 
     def create_products(self):
-        self.stdout.write('  Creating Products...')
+        self.stdout.write('  Creating Products (Based on PPT + Fixes)...')
         
         products_data = [
-            # Finished goods (beverages)
-            {'name': 'Espresso', 'category': 'Coffee', 'uom': 'cup', 'type': 'stockable', 'cost': 8000, 'price': 18000},
-            {'name': 'Americano', 'category': 'Coffee', 'uom': 'cup', 'type': 'stockable', 'cost': 10000, 'price': 22000},
-            {'name': 'Cappuccino', 'category': 'Coffee', 'uom': 'cup', 'type': 'stockable', 'cost': 12000, 'price': 28000},
-            {'name': 'Caffe Latte', 'category': 'Coffee', 'uom': 'cup', 'type': 'stockable', 'cost': 12000, 'price': 28000},
-            {'name': 'Mocha', 'category': 'Coffee', 'uom': 'cup', 'type': 'stockable', 'cost': 14000, 'price': 32000},
-            {'name': 'Caramel Macchiato', 'category': 'Coffee', 'uom': 'cup', 'type': 'stockable', 'cost': 15000, 'price': 35000},
-            {'name': 'Matcha Latte', 'category': 'Non-Coffee', 'uom': 'cup', 'type': 'stockable', 'cost': 14000, 'price': 30000},
-            {'name': 'Chocolate', 'category': 'Non-Coffee', 'uom': 'cup', 'type': 'stockable', 'cost': 12000, 'price': 25000},
-            {'name': 'Green Tea', 'category': 'Non-Coffee', 'uom': 'cup', 'type': 'stockable', 'cost': 8000, 'price': 18000},
+            # --- Finished Goods (Menu Utama) ---
+            {'name': 'Kopi Hitam Klasik (Classic Black Coffee)', 'category': 'Coffee O Products', 'uom': 'pcs', 'type': 'stockable', 'cost': 8000, 'price': 15000},
+            {'name': 'Es Kopi Susu Gula Aren (Iced Palm Sugar Latte)', 'category': 'Coffee O Products', 'uom': 'pcs', 'type': 'stockable', 'cost': 12000, 'price': 22000},
+            {'name': 'Kopi Machiato Caramel (Salted Caramel Macchiato)', 'category': 'Coffee O Products', 'uom': 'pcs', 'type': 'stockable', 'cost': 15000, 'price': 28000},
             
-            # Food
-            {'name': 'Croissant', 'category': 'Pastry', 'uom': 'pcs', 'type': 'stockable', 'cost': 12000, 'price': 25000},
-            {'name': 'Danish Pastry', 'category': 'Pastry', 'uom': 'pcs', 'type': 'stockable', 'cost': 10000, 'price': 22000},
-            {'name': 'Cheesecake', 'category': 'Cake', 'uom': 'pcs', 'type': 'stockable', 'cost': 20000, 'price': 45000},
-            {'name': 'Tiramisu', 'category': 'Cake', 'uom': 'pcs', 'type': 'stockable', 'cost': 22000, 'price': 48000},
+            # --- Raw Materials (Bahan Baku) ---
+            # Coffee Beans
+            {'name': 'Biji Kopi Arabika Gayo', 'category': 'Raw Materials', 'uom': 'g', 'type': 'stockable', 'cost': 250, 'price': 0},
+            {'name': 'Biji Kopi Espresso Blend', 'category': 'Raw Materials', 'uom': 'g', 'type': 'stockable', 'cost': 200, 'price': 0},
             
-            # Raw Materials
-            {'name': 'Coffee Beans (Arabica)', 'category': 'Raw Materials', 'uom': 'kg', 'type': 'stockable', 'cost': 180000, 'price': 0, 'can_be_sold': False},
-            {'name': 'Coffee Beans (Robusta)', 'category': 'Raw Materials', 'uom': 'kg', 'type': 'stockable', 'cost': 120000, 'price': 0, 'can_be_sold': False},
-            {'name': 'Fresh Milk', 'category': 'Raw Materials', 'uom': 'L', 'type': 'stockable', 'cost': 18000, 'price': 0, 'can_be_sold': False},
-            {'name': 'Matcha Powder', 'category': 'Raw Materials', 'uom': 'kg', 'type': 'stockable', 'cost': 350000, 'price': 0, 'can_be_sold': False},
-            {'name': 'Chocolate Powder', 'category': 'Raw Materials', 'uom': 'kg', 'type': 'stockable', 'cost': 85000, 'price': 0, 'can_be_sold': False},
-            {'name': 'Sugar', 'category': 'Raw Materials', 'uom': 'kg', 'type': 'stockable', 'cost': 14000, 'price': 0, 'can_be_sold': False},
-            {'name': 'Caramel Syrup', 'category': 'Raw Materials', 'uom': 'L', 'type': 'stockable', 'cost': 65000, 'price': 0, 'can_be_sold': False},
-            {'name': 'Vanilla Syrup', 'category': 'Raw Materials', 'uom': 'L', 'type': 'stockable', 'cost': 60000, 'price': 0, 'can_be_sold': False},
+            # Liquids & Dairy
+            {'name': 'Air Mineral', 'category': 'Raw Materials', 'uom': 'ml', 'type': 'consumable', 'cost': 2, 'price': 0},
+            {'name': 'Susu UHT Full Cream', 'category': 'Raw Materials', 'uom': 'ml', 'type': 'stockable', 'cost': 18, 'price': 0},
+            {'name': 'Whipped Cream', 'category': 'Raw Materials', 'uom': 'g', 'type': 'stockable', 'cost': 80, 'price': 0},
             
-            # Packaging
-            {'name': 'Paper Cup 8oz', 'category': 'Packaging', 'uom': 'pcs', 'type': 'stockable', 'cost': 800, 'price': 0, 'can_be_sold': False},
-            {'name': 'Paper Cup 12oz', 'category': 'Packaging', 'uom': 'pcs', 'type': 'stockable', 'cost': 1000, 'price': 0, 'can_be_sold': False},
-            {'name': 'Cup Lid', 'category': 'Packaging', 'uom': 'pcs', 'type': 'stockable', 'cost': 300, 'price': 0, 'can_be_sold': False},
-            {'name': 'Paper Bag', 'category': 'Packaging', 'uom': 'pcs', 'type': 'stockable', 'cost': 500, 'price': 0, 'can_be_sold': False},
-            {'name': 'Straw', 'category': 'Packaging', 'uom': 'pcs', 'type': 'stockable', 'cost': 150, 'price': 0, 'can_be_sold': False},
+            # Sweeteners & Flavorings
+            {'name': 'Gula Aren Sachet', 'category': 'Raw Materials', 'uom': 'pcs', 'type': 'stockable', 'cost': 500, 'price': 0},
+            {'name': 'Sirup Gula Aren', 'category': 'Raw Materials', 'uom': 'ml', 'type': 'stockable', 'cost': 60, 'price': 0},
+            {'name': 'Saus Salted Caramel', 'category': 'Raw Materials', 'uom': 'ml', 'type': 'stockable', 'cost': 100, 'price': 0},
+            {'name': 'Sirup Vanila', 'category': 'Raw Materials', 'uom': 'ml', 'type': 'stockable', 'cost': 90, 'price': 0},
+            
+            # Ice
+            {'name': 'Es Batu Kristal', 'category': 'Raw Materials', 'uom': 'g', 'type': 'stockable', 'cost': 5, 'price': 0},
+            
+            # --- Packaging & Consumables ---
+            # Cups
+            {'name': 'Paper Cup 8oz + Sleeve', 'category': 'Packaging & Consumables', 'uom': 'pcs', 'type': 'stockable', 'cost': 1200, 'price': 0},
+            {'name': 'Gelas Plastik 16oz', 'category': 'Packaging & Consumables', 'uom': 'pcs', 'type': 'stockable', 'cost': 800, 'price': 0},
+            
+            # Lids
+            {'name': 'Tutup Gelas (Lid)', 'category': 'Packaging & Consumables', 'uom': 'pcs', 'type': 'stockable', 'cost': 300, 'price': 0}, 
+            {'name': 'Tutup Gelas Datar (Lid)', 'category': 'Packaging & Consumables', 'uom': 'pcs', 'type': 'stockable', 'cost': 300, 'price': 0}, 
+            {'name': 'Tutup Cembung (Dome Lid)', 'category': 'Packaging & Consumables', 'uom': 'pcs', 'type': 'stockable', 'cost': 400, 'price': 0},
+            
+            # Accessories
+            {'name': 'Pengaduk Kayu', 'category': 'Packaging & Consumables', 'uom': 'pcs', 'type': 'stockable', 'cost': 100, 'price': 0},
+            {'name': 'Kertas Filter V60', 'category': 'Packaging & Consumables', 'uom': 'pcs', 'type': 'stockable', 'cost': 500, 'price': 0},
+            {'name': 'Stiker Label Merek', 'category': 'Packaging & Consumables', 'uom': 'pcs', 'type': 'stockable', 'cost': 200, 'price': 0},
+            {'name': 'Sedotan', 'category': 'Packaging & Consumables', 'uom': 'pcs', 'type': 'stockable', 'cost': 100, 'price': 0},
+            
+            # REPLACEMENTS FOR GAS/ELECTRICITY
+            {'name': 'Tisu (Paper Napkin)', 'category': 'Packaging & Consumables', 'uom': 'pcs', 'type': 'consumable', 'cost': 50, 'price': 0},
+            {'name': 'Lakban Segel (Sealing Tape)', 'category': 'Packaging & Consumables', 'uom': 'cm', 'type': 'consumable', 'cost': 10, 'price': 0},
         ]
         
         self.products = {}
-        for data in products_data:
-            product, created = Product.objects.get_or_create(
-                name=data['name'],
-                defaults={
-                    'category': self.categories.get(data['category']),
-                    'uom': self.uoms.get(data['uom']),
-                    'product_type': data.get('type', 'stockable'),
-                    'standard_price': Decimal(str(data['cost'])),
-                    'list_price': Decimal(str(data['price'])),
-                    'can_be_sold': data.get('can_be_sold', True),
-                    'can_be_purchased': True,
-                }
-            )
-            self.products[data['name']] = product
+        missing_categories = []
+        missing_uoms = []
         
-        self.stdout.write(self.style.SUCCESS(f'    ✓ {len(products_data)} Products'))
+        for data in products_data:
+            category = self.categories.get(data['category'])
+            uom = self.uoms.get(data['uom'])
+            
+            if not category:
+                missing_categories.append(data['category'])
+            if not uom:
+                missing_uoms.append(data['uom'])
+            
+            if category and uom:
+                product, created = Product.objects.get_or_create(
+                    name=data['name'],
+                    defaults={
+                        'category': category,
+                        'uom': uom,
+                        'product_type': data.get('type', 'stockable'),
+                        'standard_price': Decimal(str(data['cost'])),
+                        'list_price': Decimal(str(data['price'])),
+                        'can_be_sold': data['category'] == 'Coffee O Products',
+                        'can_be_purchased': data['category'] != 'Coffee O Products',
+                    }
+                )
+                self.products[data['name']] = product
+            else:
+                self.stdout.write(self.style.WARNING(f"    ! Skipping product '{data['name']}' - missing category or UoM"))
+        
+        if missing_categories:
+            self.stdout.write(self.style.WARNING(f"    ! Missing categories: {', '.join(set(missing_categories))}"))
+        if missing_uoms:
+            self.stdout.write(self.style.WARNING(f"    ! Missing UoMs: {', '.join(set(missing_uoms))}"))
+        
+        self.stdout.write(self.style.SUCCESS(f'    ✓ {len(self.products)} Products Created'))
 
     def create_vendors(self):
         self.stdout.write('  Creating Vendors...')
         
         vendors_data = [
             {
-                'name': 'PT Kopi Nusantara',
-                'code': 'KN001',
-                'email': 'sales@kopinusantara.co.id',
-                'phone': '021-5551234',
-                'street': 'Jl. Kopi Raya No. 123',
-                'city': 'Jakarta Selatan',
-                'products': ['Coffee Beans (Arabica)', 'Coffee Beans (Robusta)']
+                'name': 'Supplier Kopi Gayo',
+                'code': 'SUP-KOPI',
+                'email': 'order@gayocoffee.com',
+                'products': ['Biji Kopi Arabika Gayo', 'Biji Kopi Espresso Blend']
             },
             {
-                'name': 'CV Susu Segar Makmur',
-                'code': 'SSM01',
-                'email': 'order@sususegar.com',
-                'phone': '021-5559876',
-                'street': 'Jl. Peternakan No. 45',
-                'city': 'Bandung',
-                'products': ['Fresh Milk']
+                'name': 'Supplier Susu & Sirup',
+                'code': 'SUP-DAIRY',
+                'email': 'sales@milkysyrup.com',
+                'products': ['Susu UHT Full Cream', 'Sirup Gula Aren', 'Saus Salted Caramel', 'Sirup Vanila', 'Whipped Cream', 'Gula Aren Sachet']
             },
             {
-                'name': 'PT Indo Packaging',
-                'code': 'IP001',
-                'email': 'sales@indopack.co.id',
-                'phone': '021-5557890',
-                'street': 'Kawasan Industri Pulogadung',
-                'city': 'Jakarta Timur',
-                'products': ['Paper Cup 8oz', 'Paper Cup 12oz', 'Cup Lid', 'Paper Bag', 'Straw']
+                'name': 'Supplier Packaging Jaya',
+                'code': 'SUP-PACK',
+                'email': 'admin@packjaya.com',
+                'products': ['Paper Cup 8oz + Sleeve', 'Gelas Plastik 16oz', 'Tutup Gelas (Lid)', 'Tutup Gelas Datar (Lid)', 'Tutup Cembung (Dome Lid)', 'Pengaduk Kayu', 'Sedotan', 'Kertas Filter V60', 'Stiker Label Merek', 'Tisu (Paper Napkin)', 'Lakban Segel (Sealing Tape)']
             },
             {
-                'name': 'Toko Bahan Kue Sentosa',
-                'code': 'BKS01',
-                'email': 'sentosa.baking@gmail.com',
-                'phone': '021-5554567',
-                'street': 'Jl. Pasar Baru No. 78',
-                'city': 'Jakarta Pusat',
-                'products': ['Sugar', 'Chocolate Powder', 'Caramel Syrup', 'Vanilla Syrup', 'Matcha Powder']
-            },
+                'name': 'Agen Es Kristal',
+                'code': 'SUP-ICE',
+                'email': 'agen@ice.com',
+                'products': ['Es Batu Kristal']
+            }
         ]
         
         self.vendors = {}
@@ -201,24 +206,22 @@ class Command(BaseCommand):
                 defaults={
                     'name': data['name'],
                     'email': data['email'],
-                    'phone': data['phone'],
-                    'street': data['street'],
-                    'city': data['city'],
+                    'phone': '021-5550000',
+                    'street': 'Jl. Vendor No. 1',
+                    'city': 'Jakarta',
                 }
             )
             self.vendors[data['name']] = vendor
             
-            # Create vendor contacts
             if created:
                 VendorContact.objects.create(
                     vendor=vendor,
-                    name=f"Sales {data['name'].split()[0]}",
+                    name=f"Admin {data['name']}",
                     email=data['email'],
-                    phone=data['phone'],
                     is_primary=True
                 )
             
-            # Link products to vendor
+            missing_products = []
             for prod_name in data['products']:
                 product = self.products.get(prod_name)
                 if product:
@@ -227,479 +230,268 @@ class Command(BaseCommand):
                         product=product,
                         defaults={'price': product.standard_price}
                     )
+                else:
+                    missing_products.append(prod_name)
+            
+            if missing_products:
+                self.stdout.write(self.style.WARNING(f"    ! Vendor '{data['name']}' - missing products: {', '.join(missing_products)}"))
         
         self.stdout.write(self.style.SUCCESS(f'    ✓ {len(vendors_data)} Vendors'))
 
     def create_warehouses(self):
-        self.stdout.write('  Creating Warehouses & Locations...')
-        
-        # Main warehouse
+        self.stdout.write('  Creating Warehouses...')
         self.warehouse, _ = Warehouse.objects.get_or_create(
-            code='WH-MAIN',
-            defaults={
-                'name': 'Main Warehouse',
-                'address': 'Jl. Cafe Utama No. 1, Jakarta'
-            }
+            code='WH-COFFEEO',
+            defaults={'name': 'Coffee O Main Warehouse', 'address': 'Jl. Coffee O No. 1'}
         )
         
-        # Locations
         locations_data = [
             {'name': 'Stock Room', 'code': 'WH/STOCK', 'type': 'internal'},
-            {'name': 'Kitchen', 'code': 'WH/KITCHEN', 'type': 'internal'},
-            {'name': 'Bar Counter', 'code': 'WH/BAR', 'type': 'internal'},
-            {'name': 'Receiving Area', 'code': 'WH/RECEIVE', 'type': 'internal'},
-            {'name': 'Vendor Location', 'code': 'VENDOR', 'type': 'supplier'},
-            {'name': 'Customer Location', 'code': 'CUSTOMER', 'type': 'customer'},
+            {'name': 'Bar Station', 'code': 'WH/BAR', 'type': 'internal'},
+            {'name': 'Receiving', 'code': 'WH/IN', 'type': 'internal'},
         ]
         
         self.locations = {}
         for data in locations_data:
             loc, _ = Location.objects.get_or_create(
                 code=data['code'],
+                warehouse=self.warehouse,  # Explicit filter to prevent conflicts
                 defaults={
                     'name': data['name'],
-                    'warehouse': self.warehouse if data['type'] == 'internal' else None,
+                    'warehouse': self.warehouse,
                     'location_type': data['type']
                 }
             )
             self.locations[data['code']] = loc
-        
-        self.stdout.write(self.style.SUCCESS(f'    ✓ 1 Warehouse, {len(locations_data)} Locations'))
+            
+        self.stdout.write(self.style.SUCCESS(f'    ✓ Warehouse & {len(self.locations)} Locations'))
 
     def create_stock(self):
         self.stdout.write('  Creating Initial Stock...')
+        stock_loc = self.locations.get('WH/STOCK')
         
-        stock_location = self.locations.get('WH/STOCK')
+        if not stock_loc:
+            self.stdout.write(self.style.ERROR('    ✗ Stock location not found!'))
+            return
         
-        stock_data = {
-            'Coffee Beans (Arabica)': 50,
-            'Coffee Beans (Robusta)': 30,
-            'Fresh Milk': 100,
-            'Matcha Powder': 5,
-            'Chocolate Powder': 10,
-            'Sugar': 25,
-            'Caramel Syrup': 8,
-            'Vanilla Syrup': 8,
-            'Paper Cup 8oz': 500,
-            'Paper Cup 12oz': 500,
-            'Cup Lid': 1000,
-            'Paper Bag': 300,
-            'Straw': 1000,
-            'Croissant': 20,
-            'Danish Pastry': 15,
-            'Cheesecake': 10,
-            'Tiramisu': 8,
+        initial_stock = {
+            'Biji Kopi Arabika Gayo': 10000,
+            'Biji Kopi Espresso Blend': 10000,
+            'Susu UHT Full Cream': 50000,
+            'Sirup Gula Aren': 5000,
+            'Gelas Plastik 16oz': 500,
+            'Paper Cup 8oz + Sleeve': 500,
+            'Stiker Label Merek': 1000,
+            'Tisu (Paper Napkin)': 2000,
+            'Lakban Segel (Sealing Tape)': 5000,
         }
         
-        count = 0
-        for prod_name, qty in stock_data.items():
-            product = self.products.get(prod_name)
-            if product and stock_location:
-                StockQuant.objects.get_or_create(
-                    product=product,
-                    location=stock_location,
-                    defaults={'quantity': Decimal(str(qty))}
-                )
-                count += 1
+        created_count = 0
+        missing_products = []
         
-        self.stdout.write(self.style.SUCCESS(f'    ✓ {count} Stock entries'))
+        for name, qty in initial_stock.items():
+            product = self.products.get(name)
+            if product and stock_loc:
+                quant, created = StockQuant.objects.get_or_create(
+                    product=product,
+                    location=stock_loc,
+                    defaults={
+                        'quantity': Decimal(str(qty)),
+                        'unit_cost': product.standard_price  # Use product cost for accurate valuation
+                    }
+                )
+                if created:
+                    created_count += 1
+            elif not product:
+                missing_products.append(name)
+        
+        if missing_products:
+            self.stdout.write(self.style.WARNING(f"    ! Missing products for stock: {', '.join(missing_products)}"))
+        
+        self.stdout.write(self.style.SUCCESS(f'    ✓ {created_count} Stock Items Initialized'))
 
     def create_customers(self):
         self.stdout.write('  Creating Customers...')
-        
-        customers_data = [
-            {'name': 'Budi Santoso', 'type': 'individual', 'phone': '081234567890', 'email': 'budi.s@gmail.com', 'city': 'Jakarta'},
-            {'name': 'Siti Rahayu', 'type': 'individual', 'phone': '082345678901', 'email': 'siti.r@gmail.com', 'city': 'Jakarta'},
-            {'name': 'Ahmad Wijaya', 'type': 'individual', 'phone': '083456789012', 'email': 'ahmad.w@gmail.com', 'city': 'Tangerang'},
-            {'name': 'Dewi Lestari', 'type': 'individual', 'phone': '084567890123', 'email': 'dewi.l@gmail.com', 'city': 'Bekasi'},
-            {'name': 'Rudi Hermawan', 'type': 'individual', 'phone': '085678901234', 'email': 'rudi.h@gmail.com', 'city': 'Depok'},
-            {'name': 'PT Teknologi Maju', 'type': 'company', 'phone': '021-7891234', 'email': 'office@teknologimaju.co.id', 'city': 'Jakarta', 'company': 'PT Teknologi Maju', 'tax_id': '01.234.567.8-012.000'},
-            {'name': 'CV Berkah Jaya', 'type': 'company', 'phone': '021-7892345', 'email': 'admin@berkahjaya.com', 'city': 'Jakarta', 'company': 'CV Berkah Jaya', 'tax_id': '02.345.678.9-023.000'},
-            {'name': 'Startup Hub Indonesia', 'type': 'company', 'phone': '021-7893456', 'email': 'hello@startuphub.id', 'city': 'Jakarta', 'company': 'PT Startup Hub Indonesia'},
-        ]
-        
+        customers = ['Pelanggan Walk-in', 'Gojek Driver', 'Grab Driver']
         self.customers = {}
-        for data in customers_data:
-            customer, _ = Customer.objects.get_or_create(
-                email=data['email'],
-                defaults={
-                    'name': data['name'],
-                    'customer_type': data['type'],
-                    'phone': data['phone'],
-                    'city': data['city'],
-                    'company_name': data.get('company', ''),
-                    'tax_id': data.get('tax_id', ''),
-                }
+        for name in customers:
+            cust, _ = Customer.objects.get_or_create(
+                name=name,
+                defaults={'customer_type': 'individual', 'email': f'{name.lower().replace(" ", "")}@example.com'}
             )
-            self.customers[data['name']] = customer
-        
-        self.stdout.write(self.style.SUCCESS(f'    ✓ {len(customers_data)} Customers'))
+            self.customers[name] = cust
+        self.stdout.write(self.style.SUCCESS(f'    ✓ Customers Created'))
 
     def create_bom(self):
-        self.stdout.write('  Creating Bill of Materials...')
+        self.stdout.write('  Creating Bill of Materials (10 items rule)...')
         
-        bom_data = [
+        # BOM adjusted to replace Gas/Electricity with Tisu/Tape
+        bom_recipes = [
             {
-                'product': 'Cappuccino',
+                'product': 'Kopi Hitam Klasik (Classic Black Coffee)',
                 'qty': 1,
                 'components': [
-                    ('Coffee Beans (Arabica)', Decimal('0.02')),  # 20g per cup
-                    ('Fresh Milk', Decimal('0.15')),  # 150ml
-                    ('Paper Cup 12oz', Decimal('1')),
-                    ('Cup Lid', Decimal('1')),
+                    ('Biji Kopi Arabika Gayo', 15),     # 1
+                    ('Air Mineral', 220),               # 2
+                    ('Gula Aren Sachet', 1),            # 3
+                    ('Paper Cup 8oz + Sleeve', 1),      # 4
+                    ('Tutup Gelas (Lid)', 1),           # 5
+                    ('Pengaduk Kayu', 1),               # 6
+                    ('Kertas Filter V60', 1),           # 7
+                    ('Stiker Label Merek', 1),          # 8
+                    ('Tisu (Paper Napkin)', 1),         # 9 (Replaces Gas)
+                    ('Lakban Segel (Sealing Tape)', 5), # 10 (Replaces Electricity, 5cm)
                 ]
             },
             {
-                'product': 'Caffe Latte',
+                'product': 'Es Kopi Susu Gula Aren (Iced Palm Sugar Latte)',
                 'qty': 1,
                 'components': [
-                    ('Coffee Beans (Arabica)', Decimal('0.02')),
-                    ('Fresh Milk', Decimal('0.2')),  # More milk
-                    ('Paper Cup 12oz', Decimal('1')),
-                    ('Cup Lid', Decimal('1')),
+                    ('Biji Kopi Espresso Blend', 18),   # 1
+                    ('Susu UHT Full Cream', 120),       # 2
+                    ('Sirup Gula Aren', 20),            # 3
+                    ('Es Batu Kristal', 100),           # 4
+                    ('Air Mineral', 40),                # 5
+                    ('Gelas Plastik 16oz', 1),          # 6
+                    ('Tutup Gelas Datar (Lid)', 1),     # 7
+                    ('Sedotan', 1),                     # 8
+                    ('Stiker Label Merek', 1),          # 9
+                    ('Tisu (Paper Napkin)', 1),         # 10 (Replaces Electricity)
                 ]
             },
             {
-                'product': 'Mocha',
+                'product': 'Kopi Machiato Caramel (Salted Caramel Macchiato)',
                 'qty': 1,
                 'components': [
-                    ('Coffee Beans (Arabica)', Decimal('0.02')),
-                    ('Fresh Milk', Decimal('0.15')),
-                    ('Chocolate Powder', Decimal('0.015')),
-                    ('Paper Cup 12oz', Decimal('1')),
-                    ('Cup Lid', Decimal('1')),
+                    ('Biji Kopi Espresso Blend', 18),   # 1
+                    ('Susu UHT Full Cream', 150),       # 2
+                    ('Saus Salted Caramel', 25),        # 3
+                    ('Sirup Vanila', 10),               # 4
+                    ('Es Batu Kristal', 80),            # 5
+                    ('Air Mineral', 40),                # 6
+                    ('Gelas Plastik 16oz', 1),          # 7
+                    ('Tutup Cembung (Dome Lid)', 1),    # 8
+                    ('Sedotan', 1),                     # 9
+                    ('Stiker Label Merek', 1),          # 10
+                    ('Tisu (Paper Napkin)', 1),         # 11 (Replaces Electricity)
+                    ('Whipped Cream', 20),              # 12
                 ]
-            },
-            {
-                'product': 'Caramel Macchiato',
-                'qty': 1,
-                'components': [
-                    ('Coffee Beans (Arabica)', Decimal('0.02')),
-                    ('Fresh Milk', Decimal('0.18')),
-                    ('Caramel Syrup', Decimal('0.02')),
-                    ('Vanilla Syrup', Decimal('0.01')),
-                    ('Paper Cup 12oz', Decimal('1')),
-                    ('Cup Lid', Decimal('1')),
-                ]
-            },
-            {
-                'product': 'Matcha Latte',
-                'qty': 1,
-                'components': [
-                    ('Matcha Powder', Decimal('0.005')),
-                    ('Fresh Milk', Decimal('0.2')),
-                    ('Sugar', Decimal('0.01')),
-                    ('Paper Cup 12oz', Decimal('1')),
-                    ('Cup Lid', Decimal('1')),
-                ]
-            },
-            {
-                'product': 'Chocolate',
-                'qty': 1,
-                'components': [
-                    ('Chocolate Powder', Decimal('0.025')),
-                    ('Fresh Milk', Decimal('0.2')),
-                    ('Sugar', Decimal('0.01')),
-                    ('Paper Cup 12oz', Decimal('1')),
-                    ('Cup Lid', Decimal('1')),
-                ]
-            },
-            {
-                'product': 'Americano',
-                'qty': 1,
-                'components': [
-                    ('Coffee Beans (Arabica)', Decimal('0.02')),
-                    ('Paper Cup 8oz', Decimal('1')),
-                    ('Cup Lid', Decimal('1')),
-                ]
-            },
-            {
-                'product': 'Espresso',
-                'qty': 1,
-                'components': [
-                    ('Coffee Beans (Arabica)', Decimal('0.018')),
-                    ('Paper Cup 8oz', Decimal('1')),
-                ]
-            },
+            }
         ]
         
-        count = 0
-        for data in bom_data:
-            product = self.products.get(data['product'])
-            if product:
-                bom, created = BillOfMaterials.objects.get_or_create(
-                    product=product,
-                    defaults={'quantity': data['qty']}
-                )
-                
-                if created:
-                    for comp_name, comp_qty in data['components']:
-                        component = self.products.get(comp_name)
-                        if component:
-                            BOMLine.objects.create(
-                                bom=bom,
-                                product=component,
-                                quantity=comp_qty
-                            )
-                count += 1
+        bom_count = 0
+        component_count = 0
         
-        self.stdout.write(self.style.SUCCESS(f'    ✓ {count} BOMs'))
+        for recipe in bom_recipes:
+            main_product = self.products.get(recipe['product'])
+            if not main_product:
+                self.stdout.write(self.style.WARNING(f"    ! Product not found: {recipe['product']}"))
+                continue
+            
+            bom, created = BillOfMaterials.objects.get_or_create(
+                product=main_product,
+                defaults={'quantity': recipe['qty']}
+            )
+            
+            # Check if BOM needs components (new or empty)
+            needs_components = created or not bom.lines.exists()
+            
+            if created:
+                self.stdout.write(f"    - Creating BOM for {recipe['product']}")
+                bom_count += 1
+            elif needs_components:
+                self.stdout.write(f"    - Adding components to existing empty BOM for {recipe['product']}")
+            
+            if needs_components:
+                missing_components = []
+                for comp_name, comp_qty in recipe['components']:
+                    component = self.products.get(comp_name)
+                    if component:
+                        line, line_created = BOMLine.objects.get_or_create(
+                            bom=bom,
+                            product=component,
+                            defaults={'quantity': Decimal(str(comp_qty))}
+                        )
+                        if line_created:
+                            component_count += 1
+                    else:
+                        missing_components.append(comp_name)
+                
+                if missing_components:
+                    self.stdout.write(self.style.WARNING(f"      ! Missing components: {', '.join(missing_components)}"))
+        
+        self.stdout.write(self.style.SUCCESS(f'    ✓ {bom_count} BOMs Created/Updated, {component_count} Components Added'))
 
     def create_rfq_and_po(self):
-        self.stdout.write('  Creating RFQs & Purchase Orders...')
+        self.stdout.write('  Creating RFQs & POs...')
+        vendor = self.vendors.get('Supplier Packaging Jaya')
+        delivery_loc = self.locations.get('WH/IN')
         
-        # Create some RFQs
-        vendor_kopi = self.vendors.get('PT Kopi Nusantara')
-        vendor_pack = self.vendors.get('PT Indo Packaging')
+        if not vendor:
+            self.stdout.write(self.style.WARNING('    ! Vendor not found: Supplier Packaging Jaya'))
+            return
         
-        if vendor_kopi:
-            rfq1, created = RequestForQuotation.objects.get_or_create(
-                reference='RFQ-00001',
-                defaults={
-                    'vendor': vendor_kopi,
-                    'state': 'received',
-                }
-            )
-            if created:
-                RFQLine.objects.create(
-                    rfq=rfq1,
-                    product=self.products.get('Coffee Beans (Arabica)'),
-                    quantity=Decimal('25'),
-                    unit_price=Decimal('180000')
-                )
-                RFQLine.objects.create(
-                    rfq=rfq1,
-                    product=self.products.get('Coffee Beans (Robusta)'),
-                    quantity=Decimal('15'),
-                    unit_price=Decimal('120000')
-                )
+        if not delivery_loc:
+            self.stdout.write(self.style.WARNING('    ! Delivery location not found: WH/IN'))
+            return
         
-        if vendor_pack:
-            # Create a PO
-            po1, created = PurchaseOrder.objects.get_or_create(
-                reference='PO-00001',
-                defaults={
-                    'vendor': vendor_pack,
-                    'state': 'received',
-                    'delivery_location': self.locations.get('WH/RECEIVE'),
-                }
-            )
-            if created:
-                POLine.objects.create(
-                    purchase_order=po1,
-                    product=self.products.get('Paper Cup 12oz'),
-                    quantity=Decimal('500'),
-                    quantity_received=Decimal('500'),
-                    unit_price=Decimal('1000')
-                )
-                POLine.objects.create(
-                    purchase_order=po1,
-                    product=self.products.get('Cup Lid'),
-                    quantity=Decimal('500'),
-                    quantity_received=Decimal('500'),
-                    unit_price=Decimal('300')
-                )
-            
-            # Another PO - draft
-            po2, created = PurchaseOrder.objects.get_or_create(
-                reference='PO-00002',
-                defaults={
-                    'vendor': vendor_pack,
-                    'state': 'draft',
-                }
-            )
-            if created:
-                POLine.objects.create(
-                    purchase_order=po2,
-                    product=self.products.get('Paper Bag'),
-                    quantity=Decimal('200'),
-                    unit_price=Decimal('500')
-                )
-                POLine.objects.create(
-                    purchase_order=po2,
-                    product=self.products.get('Straw'),
-                    quantity=Decimal('500'),
-                    unit_price=Decimal('150')
-                )
+        po, created = PurchaseOrder.objects.get_or_create(
+            reference='PO-PACK-001',
+            defaults={
+                'vendor': vendor, 
+                'state': 'confirmed',  # Start with confirmed, will be received after line creation
+                'delivery_location': delivery_loc
+            }
+        )
         
-        self.stdout.write(self.style.SUCCESS(f'    ✓ RFQs & POs created'))
+        if created:
+            product = self.products.get('Tisu (Paper Napkin)')
+            if product:
+                POLine.objects.create(
+                    purchase_order=po, 
+                    product=product, 
+                    quantity=1000, 
+                    quantity_received=1000, 
+                    unit_price=50
+                )
+                # Update PO state to received since quantity_received = quantity
+                po.state = 'received'
+                po.save(update_fields=['state'])
+                self.stdout.write(self.style.SUCCESS('    ✓ Purchase Order created with received state'))
+            else:
+                self.stdout.write(self.style.WARNING('    ! Product not found: Tisu (Paper Napkin)'))
+        else:
+            self.stdout.write('    - Purchase Order already exists')
+        
+        self.stdout.write(self.style.SUCCESS(f'    ✓ Purchase Data Created'))
 
     def create_quotations_and_orders(self):
-        self.stdout.write('  Creating Sales Quotations, Orders & Invoices...')
+        self.stdout.write('  Creating Sales Orders...')
+        cust = self.customers.get('Pelanggan Walk-in')
+        prod = self.products.get('Es Kopi Susu Gula Aren (Iced Palm Sugar Latte)')
         
-        today = timezone.now().date()
+        if not cust:
+            self.stdout.write(self.style.WARNING('    ! Customer not found: Pelanggan Walk-in'))
+            return
         
-        # Customer orders
-        customer1 = self.customers.get('PT Teknologi Maju')
-        customer2 = self.customers.get('Budi Santoso')
-        customer3 = self.customers.get('Siti Rahayu')
+        if not prod:
+            self.stdout.write(self.style.WARNING('    ! Product not found: Es Kopi Susu Gula Aren (Iced Palm Sugar Latte)'))
+            return
         
-        # Quotation (sent)
-        if customer1:
-            sq1, created = SalesQuotation.objects.get_or_create(
-                reference='SQ-00001',
-                defaults={
-                    'customer': customer1,
-                    'state': 'sent',
-                    'validity_date': today + timedelta(days=7),
-                }
+        so, created = SalesOrder.objects.get_or_create(
+            reference='SO-TODAY-001',
+            defaults={'customer': cust, 'state': 'done'}
+        )
+        
+        if created:
+            SalesOrderLine.objects.create(
+                sales_order=so,
+                product=prod,
+                quantity=2,
+                unit_price=22000
             )
-            if created:
-                SalesQuotationLine.objects.create(
-                    quotation=sq1,
-                    product=self.products.get('Cappuccino'),
-                    quantity=Decimal('20'),
-                    unit_price=Decimal('28000')
-                )
-                SalesQuotationLine.objects.create(
-                    quotation=sq1,
-                    product=self.products.get('Croissant'),
-                    quantity=Decimal('20'),
-                    unit_price=Decimal('25000')
-                )
+            self.stdout.write(self.style.SUCCESS('    ✓ Sales Order created'))
+        else:
+            self.stdout.write('    - Sales Order already exists')
         
-        # Sales Order (confirmed, processing)
-        if customer2:
-            so1, created = SalesOrder.objects.get_or_create(
-                reference='SO-00001',
-                defaults={
-                    'customer': customer2,
-                    'state': 'processing',
-                }
-            )
-            if created:
-                SalesOrderLine.objects.create(
-                    sales_order=so1,
-                    product=self.products.get('Caffe Latte'),
-                    quantity=Decimal('2'),
-                    unit_price=Decimal('28000')
-                )
-                SalesOrderLine.objects.create(
-                    sales_order=so1,
-                    product=self.products.get('Cheesecake'),
-                    quantity=Decimal('1'),
-                    unit_price=Decimal('45000')
-                )
-        
-        # Sales Order (delivered with invoice)
-        if customer3:
-            so2, created = SalesOrder.objects.get_or_create(
-                reference='SO-00002',
-                defaults={
-                    'customer': customer3,
-                    'state': 'delivered',
-                }
-            )
-            if created:
-                SalesOrderLine.objects.create(
-                    sales_order=so2,
-                    product=self.products.get('Mocha'),
-                    quantity=Decimal('1'),
-                    quantity_delivered=Decimal('1'),
-                    unit_price=Decimal('32000')
-                )
-                SalesOrderLine.objects.create(
-                    sales_order=so2,
-                    product=self.products.get('Tiramisu'),
-                    quantity=Decimal('1'),
-                    quantity_delivered=Decimal('1'),
-                    unit_price=Decimal('48000')
-                )
-                
-                # Create invoice
-                inv1, inv_created = SalesInvoice.objects.get_or_create(
-                    reference='INV-00001',
-                    defaults={
-                        'customer': customer3,
-                        'sales_order': so2,
-                        'state': 'paid',
-                        'due_date': today,
-                        'payment_date': today,
-                        'payment_method': 'qris',
-                        'amount_paid': Decimal('88880'),  # with tax
-                    }
-                )
-                if inv_created:
-                    SalesInvoiceLine.objects.create(
-                        invoice=inv1,
-                        product=self.products.get('Mocha'),
-                        quantity=Decimal('1'),
-                        unit_price=Decimal('32000')
-                    )
-                    SalesInvoiceLine.objects.create(
-                        invoice=inv1,
-                        product=self.products.get('Tiramisu'),
-                        quantity=Decimal('1'),
-                        unit_price=Decimal('48000')
-                    )
-        
-        # Another completed order
-        customer4 = self.customers.get('Ahmad Wijaya')
-        if customer4:
-            so3, created = SalesOrder.objects.get_or_create(
-                reference='SO-00003',
-                defaults={
-                    'customer': customer4,
-                    'state': 'done',
-                }
-            )
-            if created:
-                SalesOrderLine.objects.create(
-                    sales_order=so3,
-                    product=self.products.get('Americano'),
-                    quantity=Decimal('2'),
-                    quantity_delivered=Decimal('2'),
-                    quantity_invoiced=Decimal('2'),
-                    unit_price=Decimal('22000')
-                )
-                
-                inv2, _ = SalesInvoice.objects.get_or_create(
-                    reference='INV-00002',
-                    defaults={
-                        'customer': customer4,
-                        'sales_order': so3,
-                        'state': 'paid',
-                        'payment_method': 'cash',
-                        'amount_paid': Decimal('48840'),
-                    }
-                )
-                if _:
-                    SalesInvoiceLine.objects.create(
-                        invoice=inv2,
-                        product=self.products.get('Americano'),
-                        quantity=Decimal('2'),
-                        unit_price=Decimal('22000')
-                    )
-        
-        # Draft order
-        customer5 = self.customers.get('Startup Hub Indonesia')
-        if customer5:
-            so4, created = SalesOrder.objects.get_or_create(
-                reference='SO-00004',
-                defaults={
-                    'customer': customer5,
-                    'state': 'draft',
-                }
-            )
-            if created:
-                SalesOrderLine.objects.create(
-                    sales_order=so4,
-                    product=self.products.get('Caramel Macchiato'),
-                    quantity=Decimal('15'),
-                    unit_price=Decimal('35000')
-                )
-                SalesOrderLine.objects.create(
-                    sales_order=so4,
-                    product=self.products.get('Matcha Latte'),
-                    quantity=Decimal('10'),
-                    unit_price=Decimal('30000')
-                )
-                SalesOrderLine.objects.create(
-                    sales_order=so4,
-                    product=self.products.get('Danish Pastry'),
-                    quantity=Decimal('25'),
-                    unit_price=Decimal('22000')
-                )
-        
-        self.stdout.write(self.style.SUCCESS(f'    ✓ Sales data created'))
-
+        self.stdout.write(self.style.SUCCESS(f'    ✓ Sales Data Created'))

@@ -1,6 +1,9 @@
 from django.db import models
+from django.db import transaction
+from django.db.utils import IntegrityError
 from decimal import Decimal
 from django.utils import timezone
+import time
 
 from core.models import BaseModel
 from apps.products.models import Product
@@ -88,20 +91,51 @@ class RequestForQuotation(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.reference:
-            last_rfq = RequestForQuotation.objects.filter(
-                reference__startswith='RFQ-'
-            ).order_by('-reference').first()
-            
-            if last_rfq and last_rfq.reference:
-                try:
-                    last_num = int(last_rfq.reference.split('-')[1])
-                    self.reference = f'RFQ-{last_num + 1:05d}'
-                except (ValueError, IndexError):
-                    self.reference = 'RFQ-00001'
-            else:
-                self.reference = 'RFQ-00001'
+            # Use thread-safe reference generation
+            max_retries = 10
+            for attempt in range(max_retries):
+                with transaction.atomic():
+                    # Lock the last RFQ to prevent concurrent access
+                    last_rfq = RequestForQuotation.objects.filter(
+                        reference__startswith='RFQ-'
+                    ).select_for_update().order_by('-reference').first()
+                    
+                    if last_rfq and last_rfq.reference:
+                        try:
+                            last_num = int(last_rfq.reference.split('-')[1])
+                            self.reference = f'RFQ-{last_num + 1:05d}'
+                        except (ValueError, IndexError):
+                            self.reference = 'RFQ-00001'
+                    else:
+                        self.reference = 'RFQ-00001'
+                    
+                    # Check if reference already exists
+                    if not RequestForQuotation.objects.filter(reference=self.reference).exists():
+                        break
+                
+                # If reference exists, retry with new number
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    # Last resort: use timestamp
+                    timestamp = int(time.time()) % 100000
+                    self.reference = f'RFQ-{timestamp:05d}'
         
-        super().save(*args, **kwargs)
+        # Try to save, retry if IntegrityError occurs
+        max_save_retries = 3
+        for attempt in range(max_save_retries):
+            try:
+                super().save(*args, **kwargs)
+                break
+            except IntegrityError as e:
+                if 'reference' in str(e) and attempt < max_save_retries - 1:
+                    # Reference conflict, generate new one
+                    if not self.reference or self.reference.startswith('RFQ-'):
+                        timestamp = int(time.time()) % 100000
+                        self.reference = f'RFQ-{timestamp:05d}'
+                    continue
+                else:
+                    raise
 
     def compute_totals(self):
         """Compute total amounts from lines"""
@@ -230,20 +264,51 @@ class PurchaseOrder(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.reference:
-            last_po = PurchaseOrder.objects.filter(
-                reference__startswith='PO-'
-            ).order_by('-reference').first()
-            
-            if last_po and last_po.reference:
-                try:
-                    last_num = int(last_po.reference.split('-')[1])
-                    self.reference = f'PO-{last_num + 1:05d}'
-                except (ValueError, IndexError):
-                    self.reference = 'PO-00001'
-            else:
-                self.reference = 'PO-00001'
+            # Use thread-safe reference generation
+            max_retries = 10
+            for attempt in range(max_retries):
+                with transaction.atomic():
+                    # Lock the last PO to prevent concurrent access
+                    last_po = PurchaseOrder.objects.filter(
+                        reference__startswith='PO-'
+                    ).select_for_update().order_by('-reference').first()
+                    
+                    if last_po and last_po.reference:
+                        try:
+                            last_num = int(last_po.reference.split('-')[1])
+                            self.reference = f'PO-{last_num + 1:05d}'
+                        except (ValueError, IndexError):
+                            self.reference = 'PO-00001'
+                    else:
+                        self.reference = 'PO-00001'
+                    
+                    # Check if reference already exists
+                    if not PurchaseOrder.objects.filter(reference=self.reference).exists():
+                        break
+                
+                # If reference exists, retry with new number
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    # Last resort: use timestamp
+                    timestamp = int(time.time()) % 100000
+                    self.reference = f'PO-{timestamp:05d}'
         
-        super().save(*args, **kwargs)
+        # Try to save, retry if IntegrityError occurs
+        max_save_retries = 3
+        for attempt in range(max_save_retries):
+            try:
+                super().save(*args, **kwargs)
+                break
+            except IntegrityError as e:
+                if 'reference' in str(e) and attempt < max_save_retries - 1:
+                    # Reference conflict, generate new one
+                    if not self.reference or self.reference.startswith('PO-'):
+                        timestamp = int(time.time()) % 100000
+                        self.reference = f'PO-{timestamp:05d}'
+                    continue
+                else:
+                    raise
 
     def compute_totals(self):
         """Compute total amounts from lines"""

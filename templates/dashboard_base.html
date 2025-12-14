@@ -4,7 +4,7 @@
     <main class="flex h-screen overflow-hidden">
         <aside class="w-[230px] min-w-[230px] h-screen p-4 bg-blue-600 text-white border-r border-neutral-200 flex flex-col justify-between flex-shrink-0">
             <section class="overflow-y-auto flex-1">
-                <div class="font-semibold pl-4 pb-6 pt-4">Cafe ERP</div>
+                <div class="font-semibold pl-4 pb-6 pt-4">Coffe'O ERP</div>
                 
                 <div class="text-xs px-4 py-1 text-white/70">Manufacturing</div>
                 <a href="{% url 'product-list' %}" class="menu">
@@ -42,6 +42,14 @@
                         </g>
                     </svg>
                     Vendor</a>
+                <a href="{% url 'rfq-list' %}" class="menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
+                            <g fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M3 10c0-3.771 0-5.657 1.172-6.828S7.229 2 11 2h2c3.771 0 5.657 0 6.828 1.172S21 6.229 21 10v4c0 3.771 0 5.657-1.172 6.828S16.771 22 13 22h-2c-3.771 0-5.657 0-6.828-1.172S3 17.771 3 14z" opacity=".5"/>
+                                <path stroke-linecap="round" d="M8 10h8M8 14h5"/>
+                            </g>
+                        </svg>
+                        Request for Quotation</a>
                 <a href="{% url 'po-list' %}" class="menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" stroke-width="1.5">
@@ -51,14 +59,6 @@
                         </g>
                     </svg>
                     Purchase Order</a>
-                <a href="{% url 'rfq-list' %}" class="menu">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
-                        <g fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M3 10c0-3.771 0-5.657 1.172-6.828S7.229 2 11 2h2c3.771 0 5.657 0 6.828 1.172S21 6.229 21 10v4c0 3.771 0 5.657-1.172 6.828S16.771 22 13 22h-2c-3.771 0-5.657 0-6.828-1.172S3 17.771 3 14z" opacity=".5"/>
-                            <path stroke-linecap="round" d="M8 10h8M8 14h5"/>
-                        </g>
-                    </svg>
-                    Request for Quotation</a>
                 
                 <div class="text-xs px-4 py-1 text-white/70 mt-4">Selling</div>
                 <a href="{% url 'customer-list' %}" class="menu">
@@ -76,7 +76,7 @@
                             <path stroke-linecap="round" d="M8 10h8M8 14h5"/>
                         </g>
                     </svg>
-                    Quotation</a>
+                    Request for Quotation</a>
                 <a href="{% url 'so-list' %}" class="menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.35em" height="1.35em" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" stroke-width="1.5">

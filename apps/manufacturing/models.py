@@ -1,6 +1,9 @@
 from django.db import models
+from django.db import transaction
+from django.db.utils import IntegrityError
 from decimal import Decimal
 from django.utils import timezone
+import time
 
 from core.models import BaseModel
 from apps.products.models import Product, UnitOfMeasure
@@ -228,20 +231,51 @@ class ManufacturingOrder(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.reference:
-            last_mo = ManufacturingOrder.objects.filter(
-                reference__startswith='MO-'
-            ).order_by('-reference').first()
-            
-            if last_mo and last_mo.reference:
-                try:
-                    last_num = int(last_mo.reference.split('-')[1])
-                    self.reference = f'MO-{last_num + 1:05d}'
-                except (ValueError, IndexError):
-                    self.reference = 'MO-00001'
-            else:
-                self.reference = 'MO-00001'
+            # Use thread-safe reference generation
+            max_retries = 10
+            for attempt in range(max_retries):
+                with transaction.atomic():
+                    # Lock the last MO to prevent concurrent access
+                    last_mo = ManufacturingOrder.objects.filter(
+                        reference__startswith='MO-'
+                    ).select_for_update().order_by('-reference').first()
+                    
+                    if last_mo and last_mo.reference:
+                        try:
+                            last_num = int(last_mo.reference.split('-')[1])
+                            self.reference = f'MO-{last_num + 1:05d}'
+                        except (ValueError, IndexError):
+                            self.reference = 'MO-00001'
+                    else:
+                        self.reference = 'MO-00001'
+                    
+                    # Check if reference already exists
+                    if not ManufacturingOrder.objects.filter(reference=self.reference).exists():
+                        break
+                
+                # If reference exists, retry with new number
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    # Last resort: use timestamp
+                    timestamp = int(time.time()) % 100000
+                    self.reference = f'MO-{timestamp:05d}'
         
-        super().save(*args, **kwargs)
+        # Try to save, retry if IntegrityError occurs
+        max_save_retries = 3
+        for attempt in range(max_save_retries):
+            try:
+                super().save(*args, **kwargs)
+                break
+            except IntegrityError as e:
+                if 'reference' in str(e) and attempt < max_save_retries - 1:
+                    # Reference conflict, generate new one
+                    if not self.reference or self.reference.startswith('MO-'):
+                        timestamp = int(time.time()) % 100000
+                        self.reference = f'MO-{timestamp:05d}'
+                    continue
+                else:
+                    raise
 
     @property
     def progress_percentage(self):

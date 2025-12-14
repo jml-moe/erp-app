@@ -129,10 +129,12 @@ class StockService:
         Returns:
             bool: True if reservation successful
         """
+        # Use select_for_update(of=('self',)) to only lock StockQuant table, not joined tables
+        # This prevents "FOR UPDATE cannot be applied to nullable side of outer join" error
         quants = StockQuant.objects.filter(
-            product=product,
-            location=location
-        ).select_for_update()
+            product_id=product.id,
+            location_id=location.id
+        ).select_for_update(of=('self',))
         
         available = sum(q.available_quantity for q in quants)
         
@@ -157,11 +159,12 @@ class StockService:
         """
         Release reserved stock
         """
+        # Use select_for_update(of=('self',)) to only lock StockQuant table, not joined tables
         quants = StockQuant.objects.filter(
-            product=product,
-            location=location,
+            product_id=product.id,
+            location_id=location.id,
             reserved_quantity__gt=0
-        ).select_for_update()
+        ).select_for_update(of=('self',))
         
         remaining = quantity
         for quant in quants:
