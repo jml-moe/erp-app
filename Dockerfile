@@ -13,7 +13,11 @@ RUN npm ci
 # Copy Tailwind input file
 COPY static/input.css ./static/
 
-# Build Tailwind CSS
+# Copy template files untuk Tailwind bisa scan classes
+COPY templates/ ./templates/
+COPY apps/ ./apps/
+
+# Build Tailwind CSS (akan scan semua HTML files)
 RUN npx @tailwindcss/cli -i ./static/input.css -o ./static/output.css
 
 # Stage 2: Python Django application
