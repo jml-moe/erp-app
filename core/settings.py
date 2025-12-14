@@ -163,9 +163,8 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "static"  # Folder untuk collected static files
 
 # WhiteNoise configuration untuk production
+# Enable WhiteNoise untuk serve static files
 # WhiteNoise akan otomatis serve dari STATIC_ROOT
-WHITENOISE_USE_FINDERS = False  # Tidak perlu search di app folders, hanya serve dari STATIC_ROOT
-WHITENOISE_AUTOREFRESH = False  # Disable auto-refresh untuk production
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
