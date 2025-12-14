@@ -159,16 +159,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "static"  # Folder untuk collected static files
 
 # WhiteNoise configuration untuk production
-# Enable WhiteNoise untuk serve static files
-# WhiteNoise akan otomatis serve dari STATIC_ROOT
+# Gunakan CompressedStaticFilesStorage (tanpa manifest untuk lebih simple)
 STORAGES = {
-    # ...
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
